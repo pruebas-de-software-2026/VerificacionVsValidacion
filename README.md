@@ -125,6 +125,33 @@ npm run prisma:studio
 npm run test:auth-smoke
 ```
 
+## Endpoints de autenticacion (backend)
+
+Base URL: `http://localhost:4000`
+
+- `POST /auth/login`
+  - Body JSON: `{ "email": "admin@reservas.local", "password": "..." }`
+  - Respuesta: usuario autenticado + cookie httpOnly de sesion.
+- `POST /auth/logout`
+  - Limpia la cookie de sesion.
+- `GET /auth/me`
+  - Requiere cookie valida y devuelve el usuario actual.
+- `GET /auth/rbac/probe`
+  - Requiere autenticacion (`ADMIN` o `LECTOR`).
+- `POST /auth/rbac/probe`
+  - Requiere rol `ADMIN` (sirve para validar bloqueo de mutaciones para `LECTOR`).
+
+Variables recomendadas en `backend/.env` para auth:
+
+- `JWT_SECRET`: secreto para firmar JWT (obligatoria).
+- `JWT_EXPIRES_IN`: expiracion del token (default `15m`).
+- `AUTH_COOKIE_NAME`: nombre de la cookie (default `auth_token`).
+- `AUTH_COOKIE_SAMESITE`: `lax`, `strict` o `none` (default `lax`).
+- `AUTH_COOKIE_SECURE`: `true/false` (default `true` en produccion).
+- `AUTH_COOKIE_MAX_AGE_MS`: vida de cookie en ms (default `900000`).
+- `AUTH_COOKIE_PATH`: path de cookie (default `/`).
+- `CORS_ORIGIN`: lista separada por comas de origenes permitidos (default `http://localhost:3000`).
+
 ## Logging backend
 
 El backend usa logs estructurados con Pino y agrega `X-Request-Id` en cada respuesta para trazar requests.

@@ -48,26 +48,17 @@ async function main(): Promise<void> {
     throw new Error("BCRYPT_ROUNDS must be a number between 10 and 15");
   }
 
-  // Paso clave de idempotencia:
-  // antes de crear, buscamos por email (campo unico) para no duplicar el admin
-  // si el seed se ejecuta varias veces en CI, local o despliegues repetidos.
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
-  });
-
-  if (existingAdmin) {
-    seedLogger.info({ action: "create-admin", result: "skipped", adminEmail }, "Seed skipped: admin already exists");
-    return;
-  }
-
   // Nunca se guarda la contrasena en texto plano.
   // Solo persistimos su hash para cumplir una practica minima de seguridad.
   const passwordHash = await bcrypt.hash(adminPassword, bcryptRounds);
 
-  // Creacion explicita del primer usuario con rol ADMIN.
-  // El campo isActive queda en true para habilitar el acceso inicial del sistema.
-  await prisma.user.create({
-    data: {
+  // Idempotencia robusta ante concurrencia:
+  // upsert evita la ventana de carrera de findUnique + create.
+  // Si el usuario ya existe, update vacio lo deja intacto.
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
       email: adminEmail,
       name: adminName,
       passwordHash,
@@ -76,10 +67,7 @@ async function main(): Promise<void> {
     },
   });
 
-  seedLogger.info(
-    { action: "create-admin", result: "created", adminEmail, bcryptRounds },
-    "Seed completed: admin created",
-  );
+  seedLogger.info({ action: "create-admin", result: "ensured", adminEmail, bcryptRounds }, "Seed completed");
 }
 
 main()
