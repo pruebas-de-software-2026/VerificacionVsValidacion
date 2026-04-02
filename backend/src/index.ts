@@ -1,59 +1,12 @@
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-import express from "express";
-import { getRequestId, httpLogger } from "./http-logger";
+import "dotenv/config";
+import { createApp } from "./app";
 import { logger } from "./logger";
-import { errorHandler, notFoundHandler } from "./middleware/error-handler";
-import { authRouter } from "./routes/auth-routes";
 
-dotenv.config();
-
-const app = express();
+const app = createApp();
 const port = Number(process.env.PORT) || 4000;
 const environment = process.env.NODE_ENV ?? "development";
-const startedAt = Date.now();
-const allowedOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:3000")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
 
 let isShuttingDown = false;
-
-app.disable("x-powered-by");
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error("CORS origin not allowed"));
-    },
-    credentials: true,
-  }),
-);
-app.use(cookieParser());
-app.use(express.json());
-app.use(httpLogger);
-
-app.use("/auth", authRouter);
-
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    service: "backend",
-    env: environment,
-    uptimeSec: Math.floor(process.uptime()),
-    startedAt: new Date(startedAt).toISOString(),
-    timestamp: new Date().toISOString(),
-    requestId: getRequestId(req, res),
-  });
-});
-
-app.use(notFoundHandler);
-app.use(errorHandler);
 
 const server = app.listen(port, () => {
   logger.info({ port, env: environment }, "Backend is running");

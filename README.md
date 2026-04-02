@@ -49,6 +49,24 @@ VerificacionVsValidacion/
 	README.md
 ```
 
+## Configuracion inicial del backend (primera vez)
+
+1. Copiar la plantilla de variables de entorno (no commitear el archivo real con secretos):
+
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+
+   En Windows (PowerShell):
+
+   ```powershell
+   Copy-Item backend\.env.example backend\.env
+   ```
+
+2. Editar `backend/.env` y completar al menos `JWT_SECRET`, `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `ADMIN_NAME` (estas tres ultimas son obligatorias para `npm run prisma:seed`).
+
+3. Levantar PostgreSQL (por ejemplo con Docker Compose en la raiz), ejecutar migraciones y seed segun [Comandos utiles](#comandos-utiles).
+
 ## Ejecutar en desarrollo
 
 Abrir dos terminales.
@@ -123,7 +141,10 @@ npm run prisma:migrate
 npm run prisma:seed
 npm run prisma:studio
 npm run test:auth-smoke
+npm run test:auth-http
 ```
+
+`test:auth-http` comprueba el flujo HTTP real (`login`, `me`, `logout`) y requiere base de datos accesible, migraciones aplicadas, seed ejecutado y las mismas variables que el seed en `backend/.env`.
 
 ## Endpoints de autenticacion (backend)
 
@@ -140,6 +161,8 @@ Base URL: `http://localhost:4000`
   - Requiere autenticacion (`ADMIN` o `LECTOR`).
 - `POST /auth/rbac/probe`
   - Requiere rol `ADMIN` (sirve para validar bloqueo de mutaciones para `LECTOR`).
+
+Los endpoints `/auth/rbac/probe` son utilitarios de desarrollo; en produccion no deben sustituir una politica de permisos sobre las APIs de negocio. Antes de un despliegue publico, rotar `JWT_SECRET` y la contrasena del administrador seed; usar HTTPS, `AUTH_COOKIE_SECURE=true` y un `CORS_ORIGIN` acotado al dominio del frontend. Detalle en [docs/implementacion-fase-2-auth.md](docs/implementacion-fase-2-auth.md) (seccion 7).
 
 Variables recomendadas en `backend/.env` para auth:
 
@@ -183,8 +206,6 @@ npm run start
 
 ## Estado actual
 
-Fase 1 iniciada y funcionando:
-
-- Backend inicializado con Express + TypeScript + Prisma
-- Frontend inicializado con Next.js + Tailwind + shadcn/ui
-- Dependencias de formularios y validacion instaladas
+- **Backend**: Express + TypeScript + Prisma; modelo `User` con roles `ADMIN` y `LECTOR`; seed idempotente para el primer administrador; autenticacion con JWT en cookie httpOnly (`POST /auth/login`, `POST /auth/logout`, `GET /auth/me`); middleware `authenticate` / `authorizeRoles` y sondas RBAC bajo `/auth/rbac/probe`.
+- **Frontend**: Next.js + Tailwind + shadcn/ui; la pantalla de login hacia el API aun no esta integrada en la UI (landing por defecto de Next.js).
+- **Pruebas**: `npm run test:auth-smoke` (seed y restricciones en BD); `npm run test:auth-http` (flujo HTTP con credenciales del admin en `.env`).
