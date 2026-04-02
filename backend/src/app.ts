@@ -5,6 +5,7 @@ import { getRequestId, httpLogger } from "./http-logger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { authRouter } from "./routes/auth-routes";
 import { clientRouter } from "./routes/client-routes";
+import { reservationRouter } from "./routes/reservation-routes";
 import { technicianRouter } from "./routes/technician-routes";
 
 export function createApp(): express.Express {
@@ -37,6 +38,7 @@ export function createApp(): express.Express {
   app.use("/auth", authRouter);
   app.use("/clients", clientRouter);
   app.use("/technicians", technicianRouter);
+  app.use("/reservations", reservationRouter);
 
   app.get("/health", (req, res) => {
     res.status(200).json({

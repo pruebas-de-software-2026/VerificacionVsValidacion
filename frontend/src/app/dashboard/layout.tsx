@@ -16,6 +16,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Button asChild variant="ghost" size="sm">
               <Link href="/dashboard/technicians">Técnicos</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/dashboard/reservations">Reservas</Link>
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/login">Sesión</Link>
             </Button>
