@@ -18,7 +18,22 @@ declare global {
   }
 }
 
+function readBearerToken(req: Request): string | undefined {
+  const raw = req.headers.authorization?.trim();
+  if (!raw) {
+    return undefined;
+  }
+
+  const match = /^Bearer\s+(.+)$/i.exec(raw);
+  return match?.[1]?.trim() || undefined;
+}
+
 function readAuthToken(req: Request): string | undefined {
+  const bearer = readBearerToken(req);
+  if (bearer) {
+    return bearer;
+  }
+
   const reqWithCookies = req as Request & { cookies?: Record<string, string> };
   return reqWithCookies.cookies?.[authConfig.cookieName];
 }

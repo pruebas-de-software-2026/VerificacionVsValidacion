@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
+import { Prisma } from "../../generated/prisma/client";
 import { getRequestId } from "../http-logger";
 import { logger } from "../logger";
+import { ValidationError } from "../errors/validation-error";
 
 type HttpError = Error & { statusCode?: number };
 
@@ -11,6 +13,27 @@ export function notFoundHandler(req: Request, _res: Response, next: NextFunction
 }
 
 export function errorHandler(err: HttpError, req: Request, res: Response, _next: NextFunction): void {
+  if (err instanceof ValidationError) {
+    const requestId = getRequestId(req, res);
+    res.status(400).json({
+      status: "error",
+      message: err.message,
+      issues: err.issues,
+      requestId,
+    });
+    return;
+  }
+
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    const requestId = getRequestId(req, res);
+    res.status(409).json({
+      status: "error",
+      message: "A record with this unique field already exists",
+      requestId,
+    });
+    return;
+  }
+
   const statusCode = Number.isInteger(err.statusCode) ? Number(err.statusCode) : 500;
   const requestId = getRequestId(req, res);
   const requestLogger = (req as Request & { log?: typeof logger }).log ?? logger;
