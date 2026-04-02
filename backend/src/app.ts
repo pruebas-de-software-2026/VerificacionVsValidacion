@@ -4,6 +4,8 @@ import express from "express";
 import { getRequestId, httpLogger } from "./http-logger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { authRouter } from "./routes/auth-routes";
+import { clientRouter } from "./routes/client-routes";
+import { technicianRouter } from "./routes/technician-routes";
 
 export function createApp(): express.Express {
   const app = express();
@@ -33,6 +35,8 @@ export function createApp(): express.Express {
   app.use(httpLogger);
 
   app.use("/auth", authRouter);
+  app.use("/clients", clientRouter);
+  app.use("/technicians", technicianRouter);
 
   app.get("/health", (req, res) => {
     res.status(200).json({
