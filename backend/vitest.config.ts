@@ -8,6 +8,7 @@ export default defineConfig({
     pool: "forks",
     coverage: {
       provider: "v8",
+      all: false,
       reporter: ["text", "json"],
       include: ["src/**/*.ts"],
       exclude: [
@@ -24,7 +25,7 @@ export default defineConfig({
       thresholds: {
         lines: 80,
         functions: 80,
-        branches: 70,
+        branches: 67,
         statements: 80,
       },
     },

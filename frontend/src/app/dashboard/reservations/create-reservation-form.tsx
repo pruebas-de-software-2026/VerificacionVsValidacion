@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
 import { FormSearchableSelect } from "@/components/form-searchable-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,15 +26,9 @@ type Props = {
 
 export function CreateReservationForm({ clients, technicians }: Props) {
   const [state, formAction, pending] = useActionState(createReservationAction, initial);
-  const [selectKey, setSelectKey] = useState(0);
   const minDate = format(new Date(), "yyyy-MM-dd");
   const activeTechnicians = technicians.filter((t) => t.isActive);
-
-  useEffect(() => {
-    if (state.ok) {
-      setSelectKey((k) => k + 1);
-    }
-  }, [state.ok]);
+  const selectKey = state.formResetNonce ?? 0;
 
   const clientOptions = clients.map((c) => ({
     value: c.id,

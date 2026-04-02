@@ -9,6 +9,8 @@ export type ReservationActionState = {
   error?: string;
   issues?: { path: string; message: string }[];
   ok?: boolean;
+  /** Cambia en cada creación exitosa para reiniciar controles del formulario sin efectos. */
+  formResetNonce?: number;
 };
 
 export async function createReservationAction(
@@ -88,7 +90,7 @@ export async function createReservationAction(
   }
 
   revalidatePath("/dashboard/reservations");
-  return { ok: true };
+  return { ok: true, formResetNonce: Date.now() };
 }
 
 export async function completeReservationAction(
