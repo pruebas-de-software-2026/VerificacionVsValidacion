@@ -14,7 +14,7 @@ Copiar `backend/.env.example` a `backend/.env` y completar al menos:
 
 - `DATABASE_URL` — cadena Prisma/PostgreSQL.
 - `JWT_SECRET` — secreto largo y aleatorio.
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` — necesarios para `npm run prisma:seed` en el primer arranque.
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` y `LECTOR_EMAIL`, `LECTOR_PASSWORD`, `LECTOR_NAME` — necesarios para `npm run prisma:seed` en el primer arranque (admin y usuario lector).
 
 Opcionales documentadas en el ejemplo: `PORT`, `CORS_ORIGIN`, cookies (`AUTH_COOKIE_*`), `LOG_LEVEL`, etc.
 
@@ -30,12 +30,17 @@ Desde `backend/`:
 
 ```bash
 npm ci
+npm run build
+npm run start
 npm run prisma:generate
-npx prisma migrate deploy
+npm run prisma:migrate
 npm run prisma:seed
+npm run prisma:studio
+npm run test:auth-smoke
+npm run test:auth-http
 ```
 
-El seed crea o actualiza el usuario administrador definido en `.env`.
+El seed crea o actualiza de forma idempotente el administrador y el usuario lector definidos en `.env`.
 
 ## Build y arranque
 

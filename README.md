@@ -63,7 +63,7 @@ VerificacionVsValidacion/
    Copy-Item backend\.env.example backend\.env
    ```
 
-2. Editar `backend/.env` y completar al menos `JWT_SECRET`, `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `ADMIN_NAME` (estas tres ultimas son obligatorias para `npm run prisma:seed`).
+2. Editar `backend/.env` y completar al menos `JWT_SECRET`, `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, `LECTOR_EMAIL`, `LECTOR_PASSWORD` y `LECTOR_NAME` (las variables de admin y lector son obligatorias para `npm run prisma:seed`).
 
 3. Levantar PostgreSQL (por ejemplo con Docker Compose en la raiz), ejecutar migraciones y seed segun [Comandos utiles](#comandos-utiles).
 

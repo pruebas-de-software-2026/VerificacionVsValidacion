@@ -8,6 +8,8 @@ import { logger } from "../src/logger";
 const databaseUrl = process.env.DATABASE_URL?.trim();
 const adminEmailRaw = process.env.ADMIN_EMAIL?.trim();
 const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+const lectorEmailRaw = process.env.LECTOR_EMAIL?.trim();
+const lectorPassword = process.env.LECTOR_PASSWORD?.trim();
 
 if (!databaseUrl) {
   throw new Error("Missing required environment variable: DATABASE_URL");
@@ -21,7 +23,16 @@ if (!adminPassword) {
   throw new Error("Missing required environment variable: ADMIN_PASSWORD");
 }
 
+if (!lectorEmailRaw) {
+  throw new Error("Missing required environment variable: LECTOR_EMAIL");
+}
+
+if (!lectorPassword) {
+  throw new Error("Missing required environment variable: LECTOR_PASSWORD");
+}
+
 const adminEmail = adminEmailRaw.toLowerCase();
+const lectorEmail = lectorEmailRaw.toLowerCase();
 
 const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
@@ -85,6 +96,16 @@ async function main(): Promise<void> {
   assert(admin.email === adminEmail, "admin email is normalized to lowercase");
   assert(admin.passwordHash !== adminPassword, "admin password is not stored in plaintext");
   assert(/^\$2[aby]\$/.test(admin.passwordHash), "admin passwordHash looks like bcrypt format");
+
+  const lectorRows = await prisma.user.findMany({ where: { email: lectorEmail } });
+  assert(lectorRows.length === 1, "exactly one lector row exists for LECTOR_EMAIL");
+
+  const lector = lectorRows[0];
+  assert(lector.role === Role.LECTOR, "seeded lector user has LECTOR role");
+  assert(lector.isActive === true, "lector user is active");
+  assert(lector.email === lectorEmail, "lector email is normalized to lowercase");
+  assert(lector.passwordHash !== lectorPassword, "lector password is not stored in plaintext");
+  assert(/^\$2[aby]\$/.test(lector.passwordHash), "lector passwordHash looks like bcrypt format");
 
   const created = await prisma.user.create({
     data: {

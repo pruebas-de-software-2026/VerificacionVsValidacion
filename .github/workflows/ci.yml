@@ -30,6 +30,9 @@ jobs:
       ADMIN_EMAIL: admin@ci.test
       ADMIN_PASSWORD: admin-ci-pass
       ADMIN_NAME: Admin CI
+      LECTOR_EMAIL: lector@ci.test
+      LECTOR_PASSWORD: lector-ci-pass
+      LECTOR_NAME: Lector CI
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6

@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Role } from "../generated/prisma/client";
 import { logger } from "../src/logger";
 
-// Este script se ejecuta para bootstrapear el primer usuario administrador del sistema.
+// Este script se ejecuta para bootstrapear el usuario administrador y un usuario lector del sistema.
 // DATABASE_URL es obligatoria porque Prisma necesita una conexion real para leer/escribir datos.
 // Se usa trim() para evitar errores por espacios accidentales en variables de entorno.
 const databaseUrl = process.env.DATABASE_URL?.trim();
@@ -36,6 +36,10 @@ async function main(): Promise<void> {
   const adminPassword = getEnv("ADMIN_PASSWORD");
   const adminName = getEnv("ADMIN_NAME");
 
+  const lectorEmail = getEnv("LECTOR_EMAIL").toLowerCase();
+  const lectorPassword = getEnv("LECTOR_PASSWORD");
+  const lectorName = getEnv("LECTOR_NAME");
+
   // BCRYPT_ROUNDS controla el costo computacional del hash.
   // Si no se define, se usa 12 como valor por defecto razonable para entorno local/MVP.
   // Se restringe el rango permitido para evitar dos extremos peligrosos:
@@ -50,7 +54,8 @@ async function main(): Promise<void> {
 
   // Nunca se guarda la contrasena en texto plano.
   // Solo persistimos su hash para cumplir una practica minima de seguridad.
-  const passwordHash = await bcrypt.hash(adminPassword, bcryptRounds);
+  const adminPasswordHash = await bcrypt.hash(adminPassword, bcryptRounds);
+  const lectorPasswordHash = await bcrypt.hash(lectorPassword, bcryptRounds);
 
   // Idempotencia robusta ante concurrencia:
   // upsert evita la ventana de carrera de findUnique + create.
@@ -61,13 +66,28 @@ async function main(): Promise<void> {
     create: {
       email: adminEmail,
       name: adminName,
-      passwordHash,
+      passwordHash: adminPasswordHash,
       role: Role.ADMIN,
       isActive: true,
     },
   });
 
-  seedLogger.info({ action: "create-admin", result: "ensured", adminEmail, bcryptRounds }, "Seed completed");
+  await prisma.user.upsert({
+    where: { email: lectorEmail },
+    update: {},
+    create: {
+      email: lectorEmail,
+      name: lectorName,
+      passwordHash: lectorPasswordHash,
+      role: Role.LECTOR,
+      isActive: true,
+    },
+  });
+
+  seedLogger.info(
+    { action: "seed-users", result: "ensured", adminEmail, lectorEmail, bcryptRounds },
+    "Seed completed",
+  );
 }
 
 main()
