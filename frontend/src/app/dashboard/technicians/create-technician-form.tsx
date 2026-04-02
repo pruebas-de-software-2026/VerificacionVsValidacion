@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { etiquetaCampo } from "@/lib/form-field-labels";
 import { createTechnicianAction, type TechnicianActionState } from "./actions";
 
 const initial: TechnicianActionState = {};
@@ -44,7 +45,7 @@ export function CreateTechnicianForm() {
             <ul className="list-inside list-disc text-sm text-red-600 sm:col-span-2 dark:text-red-400">
               {state.issues.map((i) => (
                 <li key={`${i.path}-${i.message}`}>
-                  {i.path}: {i.message}
+                  {etiquetaCampo(i.path)}: {i.message}
                 </li>
               ))}
             </ul>

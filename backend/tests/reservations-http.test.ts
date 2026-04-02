@@ -159,7 +159,7 @@ describe("Reservations HTTP API", () => {
       )
       .expect(400);
 
-    expect(res.body?.message).toMatch(/client/i);
+    expect(res.body?.message).toMatch(/cliente/i);
   });
 
   it("returns 400 when technician id does not exist", async () => {
@@ -178,7 +178,7 @@ describe("Reservations HTTP API", () => {
       )
       .expect(400);
 
-    expect(res.body?.message).toMatch(/technician/i);
+    expect(res.body?.message).toMatch(/técnico/i);
   });
 
   it("returns 400 when technician is inactive", async () => {
@@ -204,7 +204,7 @@ describe("Reservations HTTP API", () => {
       )
       .expect(400);
 
-    expect(res.body?.message).toMatch(/active/i);
+    expect(res.body?.message).toMatch(/activo/i);
   });
 
   it("returns 400 when start is in the past", async () => {

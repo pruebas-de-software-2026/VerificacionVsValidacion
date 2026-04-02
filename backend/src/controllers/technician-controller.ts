@@ -20,12 +20,12 @@ export async function getTechnician(req: Request, res: Response, next: NextFunct
   try {
     const id = pathParamId(req.params.id);
     if (!id) {
-      throw new HttpError(400, "id is required");
+      throw new HttpError(400, "El identificador es obligatorio");
     }
 
     const technician = await technicianService.getTechnicianById(id);
     if (!technician) {
-      throw new HttpError(404, "Technician not found");
+      throw new HttpError(404, "No se encontró el técnico");
     }
 
     res.status(200).json({ status: "ok", data: { technician } });
@@ -48,13 +48,13 @@ export async function updateTechnician(req: Request, res: Response, next: NextFu
   try {
     const id = pathParamId(req.params.id);
     if (!id) {
-      throw new HttpError(400, "id is required");
+      throw new HttpError(400, "El identificador es obligatorio");
     }
 
     const body = parseBody(updateTechnicianBodySchema, req.body);
     const existing = await technicianService.getTechnicianById(id);
     if (!existing) {
-      throw new HttpError(404, "Technician not found");
+      throw new HttpError(404, "No se encontró el técnico");
     }
 
     const technician = await technicianService.updateTechnician(id, body);

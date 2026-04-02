@@ -6,8 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { etiquetaCampo } from "@/lib/form-field-labels";
 import type { ClientRow, TechnicianRow } from "@/lib/types/catalog";
 import { createReservationAction, type ReservationActionState } from "./actions";
+
+/** Bloques de inicio permitidos (9:00–17:00; cada uno dura 1 h hasta las 18:00). */
+const BLOQUES_HORA_INICIO = Array.from({ length: 9 }, (_, i) => {
+  const h = 9 + i;
+  return `${String(h).padStart(2, "0")}:00`;
+});
 
 const initial: ReservationActionState = {};
 
@@ -26,8 +33,8 @@ export function CreateReservationForm({ clients, technicians }: Props) {
       <CardHeader>
         <CardTitle className="text-lg">Nueva reserva</CardTitle>
         <CardDescription>
-          Horario laboral en hora de Chile (Santiago, L–V, bloques de 1 h). La hora de fin se calcula
-          automáticamente (inicio + 1 h).
+          Horario laboral 9:00–18:00 en hora de Chile (Santiago, L–V), en bloques de 1 h. La hora de fin
+          se calcula automáticamente (inicio + 1 h).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -76,7 +83,26 @@ export function CreateReservationForm({ clients, technicians }: Props) {
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="startTime">Hora de inicio (bloque 1 h) *</Label>
-            <Input id="startTime" name="startTime" type="time" step={3600} required />
+            <select
+              id="startTime"
+              name="startTime"
+              required
+              defaultValue=""
+              className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-zinc-800"
+            >
+              <option value="" disabled>
+                Seleccionar hora…
+              </option>
+              {BLOQUES_HORA_INICIO.map((v) => {
+                const [hh] = v.split(":");
+                const endH = Number.parseInt(hh ?? "0", 10) + 1;
+                return (
+                  <option key={v} value={v}>
+                    {v} – {String(endH).padStart(2, "0")}:00
+                  </option>
+                );
+              })}
+            </select>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="description">Descripción del problema / electrodoméstico *</Label>
@@ -98,7 +124,7 @@ export function CreateReservationForm({ clients, technicians }: Props) {
             <ul className="list-inside list-disc text-sm text-red-600 sm:col-span-2 dark:text-red-400">
               {state.issues.map((i) => (
                 <li key={`${i.path}-${i.message}`}>
-                  {i.path}: {i.message}
+                  {etiquetaCampo(i.path)}: {i.message}
                 </li>
               ))}
             </ul>

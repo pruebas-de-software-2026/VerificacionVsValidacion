@@ -20,12 +20,12 @@ export async function getClient(req: Request, res: Response, next: NextFunction)
   try {
     const id = pathParamId(req.params.id);
     if (!id) {
-      throw new HttpError(400, "id is required");
+      throw new HttpError(400, "El identificador es obligatorio");
     }
 
     const client = await clientService.getClientById(id);
     if (!client) {
-      throw new HttpError(404, "Client not found");
+      throw new HttpError(404, "No se encontró el cliente");
     }
 
     res.status(200).json({ status: "ok", data: { client } });
@@ -48,13 +48,13 @@ export async function updateClient(req: Request, res: Response, next: NextFuncti
   try {
     const id = pathParamId(req.params.id);
     if (!id) {
-      throw new HttpError(400, "id is required");
+      throw new HttpError(400, "El identificador es obligatorio");
     }
 
     const body = parseBody(updateClientBodySchema, req.body);
     const existing = await clientService.getClientById(id);
     if (!existing) {
-      throw new HttpError(404, "Client not found");
+      throw new HttpError(404, "No se encontró el cliente");
     }
 
     const client = await clientService.updateClient(id, body);

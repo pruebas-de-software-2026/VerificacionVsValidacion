@@ -43,7 +43,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     const token = readAuthToken(req);
 
     if (!token) {
-      throw new HttpError(401, "Authentication required");
+      throw new HttpError(401, "Se requiere autenticación");
     }
 
     const payload = verifyAccessToken(token);
@@ -62,12 +62,12 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 export function authorizeRoles(...allowedRoles: Role[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.auth) {
-      next(new HttpError(401, "Authentication required"));
+      next(new HttpError(401, "Se requiere autenticación"));
       return;
     }
 
     if (!allowedRoles.includes(req.auth.role)) {
-      next(new HttpError(403, "Insufficient permissions"));
+      next(new HttpError(403, "Permisos insuficientes"));
       return;
     }
 

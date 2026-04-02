@@ -38,7 +38,7 @@ export async function cancelReservation(req: Request, res: Response, next: NextF
   try {
     const id = pathParamId(req.params.id);
     if (!id) {
-      throw new HttpError(400, "id is required");
+      throw new HttpError(400, "El identificador es obligatorio");
     }
     const reservation = await reservationService.cancelReservation(id);
     res.status(200).json({ status: "ok", data: { reservation } });
@@ -51,7 +51,7 @@ export async function completeReservation(req: Request, res: Response, next: Nex
   try {
     const id = pathParamId(req.params.id);
     if (!id) {
-      throw new HttpError(400, "id is required");
+      throw new HttpError(400, "El identificador es obligatorio");
     }
     const reservation = await reservationService.completeReservation(id);
     res.status(200).json({ status: "ok", data: { reservation } });

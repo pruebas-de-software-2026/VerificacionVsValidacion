@@ -24,6 +24,17 @@ describe("reservationFormSchema", () => {
     });
     expect(parsed.success).toBe(false);
   });
+
+  it("rejects start times outside 9:00–17:00", () => {
+    const parsed = reservationFormSchema.safeParse({
+      clientId: "c1",
+      technicianId: "t1",
+      date: "2030-01-15",
+      startTime: "08:00",
+      description: "Test",
+    });
+    expect(parsed.success).toBe(false);
+  });
 });
 
 describe("reservationFormToIsoPayload", () => {

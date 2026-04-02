@@ -21,6 +21,17 @@ export const reservationFormSchema = z
       ctx.addIssue({ code: "custom", message: "Fecha u hora inválida", path: ["date"] });
       return;
     }
+    const [hStr, mStr] = data.startTime.split(":");
+    const h = Number.parseInt(hStr ?? "", 10);
+    const m = Number.parseInt(mStr ?? "", 10);
+    if (Number.isNaN(h) || Number.isNaN(m) || m !== 0 || h < 9 || h > 17) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Elige un bloque entre las 9:00 y las 17:00 (horario laboral 9:00–18:00)",
+        path: ["startTime"],
+      });
+      return;
+    }
     if (start.getTime() < Date.now()) {
       ctx.addIssue({
         code: "custom",

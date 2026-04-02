@@ -29,7 +29,7 @@ export function errorHandler(err: HttpErrorLike, req: Request, res: Response, _n
     const requestId = getRequestId(req, res);
     res.status(409).json({
       status: "error",
-      message: "A record with this unique field already exists",
+      message: "Ya existe un registro con ese valor único",
       requestId,
     });
     return;
@@ -93,7 +93,7 @@ export function errorHandler(err: HttpErrorLike, req: Request, res: Response, _n
 
   res.status(statusCode).json({
     status: "error",
-    message: statusCode >= 500 ? "Internal server error" : err.message,
+    message: statusCode >= 500 ? "Error interno del servidor" : err.message,
     requestId,
   });
 }

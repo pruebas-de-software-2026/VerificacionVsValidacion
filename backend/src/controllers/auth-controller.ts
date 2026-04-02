@@ -15,12 +15,12 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     const password = typeof body.password === "string" ? body.password : "";
 
     if (!email || !password) {
-      throw new HttpError(422, "email and password are required");
+      throw new HttpError(422, "El correo y la contraseña son obligatorios");
     }
 
     const user = await authenticateUser(email, password);
     if (!user) {
-      throw new HttpError(401, "Invalid credentials");
+      throw new HttpError(401, "Credenciales inválidas");
     }
 
     const accessToken = signAccessToken(user);
@@ -44,19 +44,19 @@ export function logout(_req: Request, res: Response): void {
   res.clearCookie(authConfig.cookieName, authCookieClearOptions);
   res.status(200).json({
     status: "ok",
-    message: "Session closed",
+    message: "Sesión cerrada",
   });
 }
 
 export async function me(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     if (!req.auth) {
-      throw new HttpError(401, "Authentication required");
+      throw new HttpError(401, "Se requiere autenticación");
     }
 
     const user = await findActiveUserById(req.auth.userId);
     if (!user) {
-      throw new HttpError(401, "Authentication required");
+      throw new HttpError(401, "Se requiere autenticación");
     }
 
     res.status(200).json({

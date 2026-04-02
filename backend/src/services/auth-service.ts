@@ -69,16 +69,16 @@ export function verifyAccessToken(token: string): AuthTokenPayload {
     const decoded = jwt.verify(token, authConfig.jwtSecret) as AuthTokenPayload;
 
     if (!decoded.sub || !decoded.email || !decoded.role) {
-      throw new HttpError(401, "Invalid authentication token");
+      throw new HttpError(401, "Token de autenticación inválido");
     }
 
     if (decoded.role !== Role.ADMIN && decoded.role !== Role.LECTOR) {
-      throw new HttpError(401, "Invalid authentication token");
+      throw new HttpError(401, "Token de autenticación inválido");
     }
 
     return decoded;
   } catch {
-    throw new HttpError(401, "Authentication required");
+    throw new HttpError(401, "Se requiere autenticación");
   }
 }
 

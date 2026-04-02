@@ -30,7 +30,16 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        setError("Credenciales inválidas o usuario inactivo.");
+        let msg = "Credenciales inválidas o usuario inactivo.";
+        try {
+          const data = (await res.json()) as { message?: string };
+          if (typeof data.message === "string" && data.message.trim()) {
+            msg = data.message;
+          }
+        } catch {
+          /* mantener mensaje por defecto */
+        }
+        setError(msg);
         setPending(false);
         return;
       }
@@ -53,7 +62,7 @@ export default function LoginPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input id="email" name="email" type="email" autoComplete="username" required />
             </div>
             <div className="space-y-2">

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const optionalEmail = z
-  .union([z.string().email(), z.literal("")])
+  .union([z.string().email("Introduce un correo electrónico válido"), z.literal("")])
   .optional()
   .transform((v) => (v === "" || v === undefined ? undefined : v));
 

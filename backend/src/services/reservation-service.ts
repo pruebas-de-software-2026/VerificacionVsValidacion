@@ -45,7 +45,7 @@ export async function cancelReservation(id: string) {
   });
 
   if (!existing) {
-    throw new HttpError(404, "Reservation not found");
+    throw new HttpError(404, "No se encontró la reserva");
   }
 
   if (existing.status === ReservationStatus.CANCELADA) {
@@ -72,11 +72,11 @@ export async function completeReservation(id: string) {
   });
 
   if (!existing) {
-    throw new HttpError(404, "Reservation not found");
+    throw new HttpError(404, "No se encontró la reserva");
   }
 
   if (existing.status === ReservationStatus.CANCELADA) {
-    throw new HttpError(400, "Cannot complete a cancelled reservation");
+    throw new HttpError(400, "No se puede completar una reserva cancelada");
   }
 
   if (existing.status === ReservationStatus.COMPLETADA) {
@@ -107,7 +107,7 @@ export async function createReservation(input: CreateReservationBody) {
   const endAt = new Date(input.endAt);
 
   if (startAt.getTime() < Date.now()) {
-    throw new HttpError(400, "Reservation start must be in the future");
+    throw new HttpError(400, "La fecha de inicio de la reserva debe ser futura");
   }
 
   assertValidReservationSlot(startAt, endAt);
@@ -119,21 +119,21 @@ export async function createReservation(input: CreateReservationBody) {
 
       const client = await tx.client.findUnique({ where: { id: input.clientId } });
       if (!client) {
-        throw new HttpError(400, "Client not found");
+        throw new HttpError(400, "No se encontró el cliente");
       }
       if (!client.phone.trim() || !client.address.trim()) {
-        throw new HttpError(400, "Client must have a primary phone and service address");
+        throw new HttpError(400, "El cliente debe tener teléfono principal y dirección de servicio");
       }
 
       const technician = await tx.technician.findUnique({ where: { id: input.technicianId } });
       if (!technician) {
-        throw new HttpError(400, "Technician not found");
+        throw new HttpError(400, "No se encontró el técnico");
       }
       if (!technician.isActive) {
-        throw new HttpError(400, "Technician is not active");
+        throw new HttpError(400, "El técnico no está activo");
       }
       if (!technician.specialty.trim()) {
-        throw new HttpError(400, "Technician must have a main specialty");
+        throw new HttpError(400, "El técnico debe tener una especialidad principal");
       }
 
       const overlapping = await tx.reservation.findFirst({
@@ -148,7 +148,7 @@ export async function createReservation(input: CreateReservationBody) {
       if (overlapping) {
         throw new HttpError(
           409,
-          "Technician already has an active reservation in this time range",
+          "El técnico ya tiene una reserva activa en ese horario",
           "RESERVATION_OVERLAP",
         );
       }

@@ -81,7 +81,7 @@ export async function createReservationAction(
       issues: Array.isArray(json.issues)
         ? (json.issues as { path?: string[]; message?: string }[]).map((i) => ({
             path: (i.path ?? []).join("."),
-            message: i.message ?? "Inválido",
+            message: i.message ?? "Dato inválido",
           }))
         : undefined,
     };

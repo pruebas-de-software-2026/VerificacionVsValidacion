@@ -44,38 +44,41 @@ export function assertValidReservationSlot(startAt: Date, endAt: Date): void {
   const tz = getBusinessTimezone();
   const durationMs = endAt.getTime() - startAt.getTime();
   if (durationMs !== 60 * 60 * 1000) {
-    throw new HttpError(400, "Reservation must be exactly 1 hour long");
+    throw new HttpError(400, "La reserva debe durar exactamente 1 hora");
   }
 
   if (endAt.getTime() <= startAt.getTime()) {
-    throw new HttpError(400, "endAt must be after startAt");
+    throw new HttpError(400, "La hora de fin debe ser posterior a la de inicio");
   }
 
   const start = getZonedParts(startAt, tz);
   const end = getZonedParts(endAt, tz);
 
   if (!WEEKDAY_ALLOWED.has(start.weekday)) {
-    throw new HttpError(400, "Reservations are only available Monday through Friday");
+    throw new HttpError(400, "Las reservas solo están disponibles de lunes a viernes");
   }
   if (!WEEKDAY_ALLOWED.has(end.weekday)) {
-    throw new HttpError(400, "Reservations are only available Monday through Friday");
+    throw new HttpError(400, "Las reservas solo están disponibles de lunes a viernes");
   }
 
   if (start.minute !== 0 || start.second !== 0 || end.minute !== 0 || end.second !== 0) {
     throw new HttpError(
       400,
-      "Start and end must align to full-hour blocks in the configured business timezone",
+      "El inicio y el fin deben coincidir con bloques en punto en la zona horaria laboral configurada",
     );
   }
 
   if (start.hour < BUSINESS_START_HOUR || start.hour > BUSINESS_END_HOUR - 1) {
     throw new HttpError(
       400,
-      `Start time must be between ${BUSINESS_START_HOUR}:00 and ${BUSINESS_END_HOUR - 1}:00 in the business timezone`,
+      `La hora de inicio debe estar entre las ${BUSINESS_START_HOUR}:00 y las ${BUSINESS_END_HOUR - 1}:00 en la zona horaria laboral`,
     );
   }
 
   if (end.hour < BUSINESS_START_HOUR + 1 || end.hour > BUSINESS_END_HOUR) {
-    throw new HttpError(400, `End time must fall within business hours (${BUSINESS_START_HOUR + 1}:00–${BUSINESS_END_HOUR}:00)`);
+    throw new HttpError(
+      400,
+      `La hora de fin debe quedar dentro del horario laboral (${BUSINESS_START_HOUR + 1}:00–${BUSINESS_END_HOUR}:00)`,
+    );
   }
 }
