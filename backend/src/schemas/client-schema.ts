@@ -21,3 +21,12 @@ export const updateClientBodySchema = z.object({
 
 export type CreateClientBody = z.infer<typeof createClientBodySchema>;
 export type UpdateClientBody = z.infer<typeof updateClientBodySchema>;
+
+/** Query GET /clients */
+export const listClientsQuerySchema = z
+  .object({
+    q: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export type ListClientsParsedQuery = z.infer<typeof listClientsQuerySchema>;

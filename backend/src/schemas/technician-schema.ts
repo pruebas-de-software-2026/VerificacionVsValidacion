@@ -14,3 +14,19 @@ export const updateTechnicianBodySchema = z.object({
 
 export type CreateTechnicianBody = z.infer<typeof createTechnicianBodySchema>;
 export type UpdateTechnicianBody = z.infer<typeof updateTechnicianBodySchema>;
+
+const optionalBoolString = z
+  .enum(["true", "false"])
+  .optional()
+  .transform((v) => (v === undefined ? undefined : v === "true"));
+
+/** Query GET /technicians */
+export const listTechniciansQuerySchema = z
+  .object({
+    q: z.string().trim().max(200).optional(),
+    specialty: z.string().trim().max(200).optional(),
+    isActive: optionalBoolString,
+  })
+  .strict();
+
+export type ListTechniciansParsedQuery = z.infer<typeof listTechniciansQuerySchema>;

@@ -1,18 +1,33 @@
+import type { Prisma } from "../../generated/prisma/client";
 import { prisma } from "./prisma";
-import type { CreateClientBody, UpdateClientBody } from "../schemas/client-schema";
+import type { CreateClientBody, ListClientsParsedQuery, UpdateClientBody } from "../schemas/client-schema";
 import type { PaginationQuery } from "../lib/pagination";
 
-export async function listClients(pagination: PaginationQuery) {
-  const { page, pageSize } = pagination;
+export type ListClientsInput = PaginationQuery & ListClientsParsedQuery;
+
+export async function listClients(input: ListClientsInput) {
+  const { page, pageSize, q } = input;
   const skip = (page - 1) * pageSize;
+
+  const trimmed = q?.trim() ?? "";
+  const where: Prisma.ClientWhereInput =
+    trimmed.length > 0
+      ? {
+          OR: [
+            { name: { contains: trimmed, mode: "insensitive" } },
+            { email: { contains: trimmed, mode: "insensitive" } },
+          ],
+        }
+      : {};
 
   const [items, total] = await Promise.all([
     prisma.client.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip,
       take: pageSize,
     }),
-    prisma.client.count(),
+    prisma.client.count({ where }),
   ]);
 
   return { items, total, page, pageSize };

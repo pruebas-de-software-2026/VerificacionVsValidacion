@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle2 } from "lucide-react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { completeReservationAction, type ReservationActionState } from "./actions";
@@ -16,7 +17,8 @@ export function CompleteReservationButton({ reservationId }: Props) {
   return (
     <form action={formAction} className="flex flex-col items-end gap-1">
       <input type="hidden" name="reservationId" value={reservationId} />
-      <Button type="submit" variant="secondary" size="sm" disabled={pending}>
+      <Button type="submit" variant="secondary" size="sm" disabled={pending} className="gap-1.5">
+        <CheckCircle2 className="size-3.5" aria-hidden />
         {pending ? "Marcando…" : "Completar"}
       </Button>
       {state.error ? (

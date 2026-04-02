@@ -3,13 +3,22 @@ import { HttpError } from "../errors/http-error";
 import { parseBody } from "../lib/parse-body";
 import { pathParamId } from "../lib/path-param";
 import { parsePaginationQuery } from "../lib/pagination";
-import { createTechnicianBodySchema, updateTechnicianBodySchema } from "../schemas/technician-schema";
+import {
+  createTechnicianBodySchema,
+  listTechniciansQuerySchema,
+  updateTechnicianBodySchema,
+} from "../schemas/technician-schema";
 import * as technicianService from "../services/technician-service";
 
 export async function listTechnicians(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const pagination = parsePaginationQuery(req.query as Record<string, unknown>);
-    const result = await technicianService.listTechnicians(pagination);
+    const filters = parseBody(listTechniciansQuerySchema, {
+      q: req.query.q,
+      specialty: req.query.specialty,
+      isActive: req.query.isActive,
+    });
+    const result = await technicianService.listTechnicians({ ...pagination, ...filters });
     res.status(200).json({ status: "ok", data: result });
   } catch (error: unknown) {
     next(error);

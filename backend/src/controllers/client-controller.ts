@@ -3,13 +3,14 @@ import { HttpError } from "../errors/http-error";
 import { parseBody } from "../lib/parse-body";
 import { pathParamId } from "../lib/path-param";
 import { parsePaginationQuery } from "../lib/pagination";
-import { createClientBodySchema, updateClientBodySchema } from "../schemas/client-schema";
+import { createClientBodySchema, listClientsQuerySchema, updateClientBodySchema } from "../schemas/client-schema";
 import * as clientService from "../services/client-service";
 
 export async function listClients(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const pagination = parsePaginationQuery(req.query as Record<string, unknown>);
-    const result = await clientService.listClients(pagination);
+    const filters = parseBody(listClientsQuerySchema, { q: req.query.q });
+    const result = await clientService.listClients({ ...pagination, ...filters });
     res.status(200).json({ status: "ok", data: result });
   } catch (error: unknown) {
     next(error);

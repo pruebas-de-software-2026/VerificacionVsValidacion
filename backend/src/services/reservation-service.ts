@@ -1,3 +1,4 @@
+import type { Prisma } from "../../generated/prisma/client";
 import { ReservationStatus } from "../../generated/prisma/client";
 import { assertValidReservationSlot } from "../config/business-hours";
 import { HttpError } from "../errors/http-error";
@@ -7,16 +8,52 @@ import { prisma } from "./prisma";
 
 export type ListReservationsInput = PaginationQuery & ListReservationsParsedQuery;
 
+function buildReservationWhere(input: ListReservationsInput): Prisma.ReservationWhereInput {
+  const fromDate = input.from ? new Date(input.from) : new Date();
+  const toDate = input.to ? new Date(input.to) : undefined;
+
+  const startAt: Prisma.DateTimeFilter = { gte: fromDate };
+  if (toDate) {
+    startAt.lte = toDate;
+  }
+
+  const where: Prisma.ReservationWhereInput = {
+    startAt,
+    ...(input.technicianId ? { technicianId: input.technicianId } : {}),
+  };
+
+  const statusRaw = input.status?.trim();
+  if (statusRaw && statusRaw.toLowerCase() === "all") {
+    // sin filtro por estado
+  } else if (statusRaw) {
+    const statuses = statusRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) as ReservationStatus[];
+    where.status = { in: statuses };
+  } else if (!input.includeCancelled) {
+    where.status = { not: ReservationStatus.CANCELADA };
+  }
+
+  const q = input.q?.trim() ?? "";
+  if (q.length > 0) {
+    where.AND = [
+      {
+        OR: [
+          { client: { name: { contains: q, mode: "insensitive" } } },
+          { technician: { name: { contains: q, mode: "insensitive" } } },
+        ],
+      },
+    ];
+  }
+
+  return where;
+}
+
 export async function listReservations(input: ListReservationsInput) {
   const { page, pageSize } = input;
   const skip = (page - 1) * pageSize;
-  const fromDate = input.from ? new Date(input.from) : new Date();
-
-  const where = {
-    startAt: { gte: fromDate },
-    ...(input.technicianId ? { technicianId: input.technicianId } : {}),
-    ...(!input.includeCancelled ? { status: { not: ReservationStatus.CANCELADA } } : {}),
-  };
+  const where = buildReservationWhere(input);
 
   const [items, total] = await Promise.all([
     prisma.reservation.findMany({

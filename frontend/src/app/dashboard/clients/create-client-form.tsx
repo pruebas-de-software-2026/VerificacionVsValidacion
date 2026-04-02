@@ -27,7 +27,7 @@ export function CreateClientForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Teléfono principal *</Label>
-            <Input id="phone" name="phone" type="tel" placeholder="+34 …" required />
+            <Input id="phone" name="phone" type="tel" placeholder="+56 …" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Correo electrónico</Label>

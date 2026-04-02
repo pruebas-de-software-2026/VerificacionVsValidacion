@@ -14,8 +14,11 @@ export async function listReservations(req: Request, res: Response, next: NextFu
     const pagination = parsePaginationQuery(req.query as Record<string, unknown>);
     const filters = parseBody(listReservationsQuerySchema, {
       from: req.query.from,
+      to: req.query.to,
       technicianId: req.query.technicianId,
       includeCancelled: req.query.includeCancelled,
+      status: req.query.status,
+      q: req.query.q,
     });
     const result = await reservationService.listReservations({ ...pagination, ...filters });
     res.status(200).json({ status: "ok", data: result });

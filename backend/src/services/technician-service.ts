@@ -1,18 +1,35 @@
+import type { Prisma } from "../../generated/prisma/client";
 import { prisma } from "./prisma";
-import type { CreateTechnicianBody, UpdateTechnicianBody } from "../schemas/technician-schema";
+import type { CreateTechnicianBody, ListTechniciansParsedQuery, UpdateTechnicianBody } from "../schemas/technician-schema";
 import type { PaginationQuery } from "../lib/pagination";
 
-export async function listTechnicians(pagination: PaginationQuery) {
-  const { page, pageSize } = pagination;
+export type ListTechniciansInput = PaginationQuery & ListTechniciansParsedQuery;
+
+export async function listTechnicians(input: ListTechniciansInput) {
+  const { page, pageSize, q, specialty, isActive } = input;
   const skip = (page - 1) * pageSize;
+
+  const where: Prisma.TechnicianWhereInput = {};
+  const nameQ = q?.trim() ?? "";
+  if (nameQ.length > 0) {
+    where.name = { contains: nameQ, mode: "insensitive" };
+  }
+  const spec = specialty?.trim() ?? "";
+  if (spec.length > 0) {
+    where.specialty = { contains: spec, mode: "insensitive" };
+  }
+  if (isActive !== undefined) {
+    where.isActive = isActive;
+  }
 
   const [items, total] = await Promise.all([
     prisma.technician.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip,
       take: pageSize,
     }),
-    prisma.technician.count(),
+    prisma.technician.count({ where }),
   ]);
 
   return { items, total, page, pageSize };

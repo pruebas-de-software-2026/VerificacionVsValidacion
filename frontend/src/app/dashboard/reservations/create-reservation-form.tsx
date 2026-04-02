@@ -1,7 +1,8 @@
 "use client";
 
 import { format } from "date-fns";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { FormSearchableSelect } from "@/components/form-searchable-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,8 +26,34 @@ type Props = {
 
 export function CreateReservationForm({ clients, technicians }: Props) {
   const [state, formAction, pending] = useActionState(createReservationAction, initial);
+  const [selectKey, setSelectKey] = useState(0);
   const minDate = format(new Date(), "yyyy-MM-dd");
   const activeTechnicians = technicians.filter((t) => t.isActive);
+
+  useEffect(() => {
+    if (state.ok) {
+      setSelectKey((k) => k + 1);
+    }
+  }, [state.ok]);
+
+  const clientOptions = clients.map((c) => ({
+    value: c.id,
+    label: c.name,
+    keywords: [c.email, c.phone].filter(Boolean).join(" "),
+  }));
+
+  const technicianOptions = activeTechnicians.map((t) => ({
+    value: t.id,
+    label: `${t.name} — ${t.specialty}`,
+    keywords: `${t.name} ${t.specialty}`,
+  }));
+
+  const startTimeOptions = BLOQUES_HORA_INICIO.map((v) => {
+    const [hh] = v.split(":");
+    const endH = Number.parseInt(hh ?? "0", 10) + 1;
+    const label = `${v} – ${String(endH).padStart(2, "0")}:00`;
+    return { value: v, label, keywords: label };
+  });
 
   return (
     <Card className="border-zinc-200 bg-white/80 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
@@ -41,41 +68,29 @@ export function CreateReservationForm({ clients, technicians }: Props) {
         <form action={formAction} className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="clientId">Cliente *</Label>
-            <select
+            <FormSearchableSelect
+              key={`client-${selectKey}`}
               id="clientId"
               name="clientId"
               required
-              className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-zinc-800"
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Seleccionar…
-              </option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              options={clientOptions}
+              placeholder="Seleccionar cliente…"
+              searchPlaceholder="Buscar por nombre, email o teléfono…"
+              emptyLabel="No hay clientes que coincidan."
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="technicianId">Técnico *</Label>
-            <select
+            <FormSearchableSelect
+              key={`tech-${selectKey}`}
               id="technicianId"
               name="technicianId"
               required
-              className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-zinc-800"
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Seleccionar…
-              </option>
-              {activeTechnicians.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} — {t.specialty}
-                </option>
-              ))}
-            </select>
+              options={technicianOptions}
+              placeholder="Seleccionar técnico…"
+              searchPlaceholder="Buscar por nombre o especialidad…"
+              emptyLabel="No hay técnicos activos que coincidan."
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="date">Fecha *</Label>
@@ -83,26 +98,16 @@ export function CreateReservationForm({ clients, technicians }: Props) {
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="startTime">Hora de inicio (bloque 1 h) *</Label>
-            <select
+            <FormSearchableSelect
+              key={`time-${selectKey}`}
               id="startTime"
               name="startTime"
               required
-              defaultValue=""
-              className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-zinc-800"
-            >
-              <option value="" disabled>
-                Seleccionar hora…
-              </option>
-              {BLOQUES_HORA_INICIO.map((v) => {
-                const [hh] = v.split(":");
-                const endH = Number.parseInt(hh ?? "0", 10) + 1;
-                return (
-                  <option key={v} value={v}>
-                    {v} – {String(endH).padStart(2, "0")}:00
-                  </option>
-                );
-              })}
-            </select>
+              options={startTimeOptions}
+              placeholder="Seleccionar hora…"
+              searchPlaceholder="Buscar hora (ej. 10)…"
+              emptyLabel="No hay bloques que coincidan."
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="description">Descripción del problema / electrodoméstico *</Label>

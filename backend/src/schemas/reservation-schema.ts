@@ -37,12 +37,33 @@ const optionalBoolString = z
   .optional()
   .transform((v) => v === "true");
 
+const reservationStatusValues = new Set(["PROGRAMADA", "COMPLETADA", "CANCELADA"]);
+
 export const listReservationsQuerySchema = z
   .object({
     from: isoDateTimeWithOffset.optional(),
+    to: isoDateTimeWithOffset.optional(),
     technicianId: z.string().trim().min(1, "El identificador del técnico no es válido").optional(),
     includeCancelled: optionalBoolString,
+    /** Una categoría, lista separada por comas, o `all` */
+    status: z.string().trim().max(80).optional(),
+    q: z.string().trim().max(200).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    const raw = data.status?.trim();
+    if (!raw || raw.toLowerCase() === "all") {
+      return;
+    }
+    for (const p of raw.split(",").map((s) => s.trim()).filter(Boolean)) {
+      if (!reservationStatusValues.has(p)) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Estado no válido: ${p}. Use PROGRAMADA, COMPLETADA, CANCELADA o all.`,
+          path: ["status"],
+        });
+      }
+    }
+  });
 
 export type ListReservationsParsedQuery = z.infer<typeof listReservationsQuerySchema>;
