@@ -1,22 +1,9 @@
-import Link from "next/link";
 import { CreateTechnicianForm } from "./create-technician-form";
 import { TechniciansTable } from "./technicians-table";
 import { fetchTechniciansList } from "@/lib/fetch-catalog";
-import { Button } from "@/components/ui/button";
 
 export default async function TechniciansPage() {
   const result = await fetchTechniciansList();
-
-  if (!result.ok && result.error === "unauthorized") {
-    return (
-      <div className="space-y-4">
-        <p className="text-zinc-700 dark:text-zinc-300">Debes iniciar sesión para ver los técnicos.</p>
-        <Button asChild variant="outline">
-          <Link href="/login">Ir al inicio de sesión</Link>
-        </Button>
-      </div>
-    );
-  }
 
   const technicians = result.ok ? result.data.items : [];
 

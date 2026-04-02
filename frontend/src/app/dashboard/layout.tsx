@@ -1,7 +1,15 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { fetchAuthUser } from "@/lib/fetch-session";
+import { LogoutButton } from "./logout-button";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const auth = await fetchAuthUser();
+  if (!auth.ok) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
@@ -19,12 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Button asChild variant="ghost" size="sm">
               <Link href="/dashboard/reservations">Reservas</Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/login">Sesión</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/">Inicio</Link>
-            </Button>
+            <LogoutButton />
           </nav>
         </div>
       </header>

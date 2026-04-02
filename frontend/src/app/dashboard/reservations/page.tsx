@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { fetchClientsList, fetchTechniciansList } from "@/lib/fetch-catalog";
 import { fetchAuthUser } from "@/lib/fetch-session";
 import { fetchReservationsList } from "@/lib/fetch-reservations";
-import { Button } from "@/components/ui/button";
 import { CreateReservationForm } from "./create-reservation-form";
 import { ReservationsTable } from "./reservations-table";
 
@@ -13,22 +11,6 @@ export default async function ReservationsPage() {
     fetchReservationsList(),
     fetchAuthUser(),
   ]);
-
-  const unauthorized =
-    (!clientsResult.ok && clientsResult.error === "unauthorized") ||
-    (!techResult.ok && techResult.error === "unauthorized") ||
-    (!reservationsResult.ok && reservationsResult.error === "unauthorized");
-
-  if (unauthorized) {
-    return (
-      <div className="space-y-4">
-        <p className="text-zinc-700 dark:text-zinc-300">Debes iniciar sesión para gestionar reservas.</p>
-        <Button asChild variant="outline">
-          <Link href="/login">Ir al inicio de sesión</Link>
-        </Button>
-      </div>
-    );
-  }
 
   const clients = clientsResult.ok ? clientsResult.data.items : [];
   const technicians = techResult.ok ? techResult.data.items : [];

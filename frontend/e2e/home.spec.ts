@@ -5,4 +5,9 @@ test.describe("Smoke E2E", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: /Panel de gestión/i })).toBeVisible();
   });
+
+  test("sin sesión, el dashboard redirige al login", async ({ page }) => {
+    await page.goto("/dashboard/clients");
+    await expect(page).toHaveURL(/\/login$/);
+  });
 });

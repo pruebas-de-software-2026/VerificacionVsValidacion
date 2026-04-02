@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { cache } from "react";
 import { getBackendProxyUrl } from "@/lib/internal-fetch";
 import type { AuthUser } from "@/lib/types/reservation";
 
@@ -7,7 +8,7 @@ async function getCookieHeader(): Promise<string> {
   return h.get("cookie") ?? "";
 }
 
-export async function fetchAuthUser(): Promise<
+export const fetchAuthUser = cache(async function fetchAuthUser(): Promise<
   { ok: true; user: AuthUser } | { ok: false; error: "unauthorized" | "failed" }
 > {
   const url = await getBackendProxyUrl("/auth/me");
@@ -23,4 +24,4 @@ export async function fetchAuthUser(): Promise<
     return { ok: false, error: "failed" };
   }
   return { ok: true, user: json.user };
-}
+});

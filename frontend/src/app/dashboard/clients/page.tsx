@@ -1,22 +1,9 @@
-import Link from "next/link";
 import { CreateClientForm } from "./create-client-form";
 import { ClientsTable } from "./clients-table";
 import { fetchClientsList } from "@/lib/fetch-catalog";
-import { Button } from "@/components/ui/button";
 
 export default async function ClientsPage() {
   const result = await fetchClientsList();
-
-  if (!result.ok && result.error === "unauthorized") {
-    return (
-      <div className="space-y-4">
-        <p className="text-zinc-700 dark:text-zinc-300">Debes iniciar sesión para ver los clientes.</p>
-        <Button asChild variant="outline">
-          <Link href="/login">Ir al inicio de sesión</Link>
-        </Button>
-      </div>
-    );
-  }
 
   const clients = result.ok ? result.data.items : [];
 
