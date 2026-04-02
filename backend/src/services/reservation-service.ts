@@ -1,7 +1,65 @@
 import { ReservationStatus } from "../../generated/prisma/client";
 import { HttpError } from "../errors/http-error";
-import type { CreateReservationBody } from "../schemas/reservation-schema";
+import type { PaginationQuery } from "../lib/pagination";
+import type { CreateReservationBody, ListReservationsParsedQuery } from "../schemas/reservation-schema";
 import { prisma } from "./prisma";
+
+export type ListReservationsInput = PaginationQuery & ListReservationsParsedQuery;
+
+export async function listReservations(input: ListReservationsInput) {
+  const { page, pageSize } = input;
+  const skip = (page - 1) * pageSize;
+  const fromDate = input.from ? new Date(input.from) : new Date();
+
+  const where = {
+    startAt: { gte: fromDate },
+    ...(input.technicianId ? { technicianId: input.technicianId } : {}),
+    ...(!input.includeCancelled ? { status: { not: ReservationStatus.CANCELADO } } : {}),
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.reservation.findMany({
+      where,
+      orderBy: [{ technicianId: "asc" }, { startAt: "asc" }],
+      skip,
+      take: pageSize,
+      include: {
+        client: { select: { id: true, name: true } },
+        technician: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.reservation.count({ where }),
+  ]);
+
+  return { items, total, page, pageSize };
+}
+
+export async function cancelReservation(id: string) {
+  const existing = await prisma.reservation.findUnique({
+    where: { id },
+    include: {
+      client: { select: { id: true, name: true } },
+      technician: { select: { id: true, name: true } },
+    },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Reservation not found");
+  }
+
+  if (existing.status === ReservationStatus.CANCELADO) {
+    return existing;
+  }
+
+  return prisma.reservation.update({
+    where: { id },
+    data: { status: ReservationStatus.CANCELADO },
+    include: {
+      client: { select: { id: true, name: true } },
+      technician: { select: { id: true, name: true } },
+    },
+  });
+}
 
 /** Clave estable bigint para `pg_advisory_xact_lock` por técnico (serializa creación de reservas). */
 export function technicianAdvisoryLockKey(technicianId: string): bigint {
@@ -41,7 +99,7 @@ export async function createReservation(input: CreateReservationBody) {
       const overlapping = await tx.reservation.findFirst({
         where: {
           technicianId: input.technicianId,
-          status: { not: ReservationStatus.CANCELLED },
+          status: { not: ReservationStatus.CANCELADO },
           startAt: { lt: endAt },
           endAt: { gt: startAt },
         },
@@ -61,7 +119,7 @@ export async function createReservation(input: CreateReservationBody) {
           technicianId: input.technicianId,
           startAt,
           endAt,
-          status: ReservationStatus.PENDING,
+          status: ReservationStatus.PENDIENTE,
         },
       });
     },

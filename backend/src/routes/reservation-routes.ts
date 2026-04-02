@@ -5,11 +5,25 @@ import { authenticate, authorizeRoles } from "../middleware/auth-middleware";
 
 const reservationRouter = Router();
 
+reservationRouter.get(
+  "/",
+  authenticate,
+  authorizeRoles(Role.ADMIN, Role.LECTOR),
+  reservationController.listReservations,
+);
+
 reservationRouter.post(
   "/",
   authenticate,
   authorizeRoles(Role.ADMIN),
   reservationController.createReservation,
+);
+
+reservationRouter.patch(
+  "/:id/cancel",
+  authenticate,
+  authorizeRoles(Role.ADMIN),
+  reservationController.cancelReservation,
 );
 
 export { reservationRouter };

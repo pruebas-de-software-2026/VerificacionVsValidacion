@@ -26,3 +26,18 @@ export const createReservationBodySchema = z
   });
 
 export type CreateReservationBody = z.infer<typeof createReservationBodySchema>;
+
+const optionalBoolString = z
+  .enum(["true", "false"])
+  .optional()
+  .transform((v) => v === "true");
+
+export const listReservationsQuerySchema = z
+  .object({
+    from: isoDateTimeWithOffset.optional(),
+    technicianId: z.string().trim().min(1).optional(),
+    includeCancelled: optionalBoolString,
+  })
+  .strict();
+
+export type ListReservationsParsedQuery = z.infer<typeof listReservationsQuerySchema>;

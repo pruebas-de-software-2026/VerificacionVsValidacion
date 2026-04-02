@@ -18,9 +18,9 @@ enum Role {
 }
 
 enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
+  PENDIENTE
+  CONFIRMADO
+  CANCELADO
 }
 
 model User {
@@ -63,7 +63,7 @@ model Reservation {
   technicianId String
   startAt      DateTime
   endAt        DateTime
-  status       ReservationStatus @default(PENDING)
+  status       ReservationStatus @default(PENDIENTE)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 

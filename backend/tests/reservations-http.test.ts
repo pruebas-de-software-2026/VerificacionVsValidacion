@@ -2,7 +2,7 @@ import "dotenv/config";
 import bcrypt from "bcrypt";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Role } from "../generated/prisma/client";
+import { ReservationStatus, Role } from "../generated/prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/services/prisma";
 import { signAccessToken } from "../src/services/auth-service";
@@ -235,5 +235,146 @@ describe("Reservations HTTP API", () => {
       },
     });
     expect(count).toBe(1);
+  });
+
+  it("rejects unauthenticated GET /reservations", async () => {
+    await request(app).get("/reservations").expect(401);
+  });
+
+  it("lector can GET /reservations (read)", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: LECTOR_EMAIL, password: LECTOR_PASSWORD }).expect(200);
+    const res = await agent.get("/reservations?page=1&pageSize=20").expect(200);
+    expect(res.body?.status).toBe("ok");
+    expect(Array.isArray(res.body?.data?.items)).toBe(true);
+  });
+
+  it("lists future reservations ordered by technicianId then startAt (F4–F5)", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+
+    const techB = await agent
+      .post("/technicians")
+      .send({ name: `List Order Tech B ${Date.now()}`, specialty: "QA" })
+      .expect(201);
+    const techBId = techB.body?.data?.technician?.id as string;
+
+    const from = "2030-01-01T00:00:00.000Z";
+    await agent
+      .post("/reservations")
+      .send({
+        clientId,
+        technicianId,
+        startAt: "2030-06-15T10:00:00.000Z",
+        endAt: "2030-06-15T11:00:00.000Z",
+      })
+      .expect(201);
+    await agent
+      .post("/reservations")
+      .send({
+        clientId,
+        technicianId: techBId,
+        startAt: "2030-03-10T10:00:00.000Z",
+        endAt: "2030-03-10T11:00:00.000Z",
+      })
+      .expect(201);
+    await agent
+      .post("/reservations")
+      .send({
+        clientId,
+        technicianId,
+        startAt: "2030-03-20T10:00:00.000Z",
+        endAt: "2030-03-20T11:00:00.000Z",
+      })
+      .expect(201);
+
+    const list = await agent
+      .get(`/reservations?from=${encodeURIComponent(from)}&page=1&pageSize=50`)
+      .expect(200);
+
+    const items = list.body?.data?.items as { technicianId: string; startAt: string }[];
+    const subset = items.filter((r) => r.technicianId === technicianId || r.technicianId === techBId);
+    const ours = subset.filter((r) => r.startAt.startsWith("2030-03-") || r.startAt.startsWith("2030-06-"));
+    const sorted = [...ours].sort((a, b) => {
+      const tc = a.technicianId.localeCompare(b.technicianId);
+      if (tc !== 0) return tc;
+      return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+    });
+    expect(ours.map((r) => `${r.technicianId}|${r.startAt}`)).toEqual(sorted.map((r) => `${r.technicianId}|${r.startAt}`));
+
+    await prisma.reservation.deleteMany({ where: { technicianId: techBId } });
+    await prisma.technician.delete({ where: { id: techBId } });
+  });
+
+  it("cancel future reservation frees slot for new POST (F6)", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+
+    const startAt = "2031-05-01T14:00:00.000Z";
+    const endAt = "2031-05-01T15:00:00.000Z";
+    const created = await agent.post("/reservations").send({ clientId, technicianId, startAt, endAt }).expect(201);
+    const id = created.body?.data?.reservation?.id as string;
+
+    await agent.patch(`/reservations/${id}/cancel`).expect(200);
+
+    await agent.post("/reservations").send({ clientId, technicianId, startAt, endAt }).expect(201);
+  });
+
+  it("cancel past reservation is allowed for audit (F7)", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+
+    const past = await prisma.reservation.create({
+      data: {
+        clientId,
+        technicianId,
+        startAt: new Date("2019-06-01T10:00:00.000Z"),
+        endAt: new Date("2019-06-01T11:00:00.000Z"),
+        status: ReservationStatus.CONFIRMADO,
+      },
+    });
+
+    const res = await agent.patch(`/reservations/${past.id}/cancel`).expect(200);
+    expect(res.body?.data?.reservation?.status).toBe("CANCELADO");
+
+    await prisma.reservation.delete({ where: { id: past.id } });
+  });
+
+  it("PATCH cancel is idempotent when already cancelled", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+
+    const startAt = "2032-01-10T12:00:00.000Z";
+    const endAt = "2032-01-10T13:00:00.000Z";
+    const created = await agent.post("/reservations").send({ clientId, technicianId, startAt, endAt }).expect(201);
+    const id = created.body?.data?.reservation?.id as string;
+    await agent.patch(`/reservations/${id}/cancel`).expect(200);
+    const second = await agent.patch(`/reservations/${id}/cancel`).expect(200);
+    expect(second.body?.data?.reservation?.status).toBe("CANCELADO");
+  });
+
+  it("lector cannot PATCH /reservations/:id/cancel (F8)", async () => {
+    const admin = request.agent(app);
+    await admin.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+    const created = await admin
+      .post("/reservations")
+      .send({
+        clientId,
+        technicianId,
+        startAt: "2033-04-01T09:00:00.000Z",
+        endAt: "2033-04-01T10:00:00.000Z",
+      })
+      .expect(201);
+    const id = created.body?.data?.reservation?.id as string;
+
+    const lector = request.agent(app);
+    await lector.post("/auth/login").send({ email: LECTOR_EMAIL, password: LECTOR_PASSWORD }).expect(200);
+    await lector.patch(`/reservations/${id}/cancel`).expect(403);
+  });
+
+  it("returns 404 when cancelling unknown id", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+    await agent.patch("/reservations/cl_nonexistent123456789012/cancel").expect(404);
   });
 });

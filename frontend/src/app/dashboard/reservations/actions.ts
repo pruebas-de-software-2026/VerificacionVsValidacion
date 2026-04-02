@@ -89,3 +89,44 @@ export async function createReservationAction(
   revalidatePath("/dashboard/reservations");
   return { ok: true };
 }
+
+export async function cancelReservationAction(
+  _prev: ReservationActionState,
+  formData: FormData,
+): Promise<ReservationActionState> {
+  const rawId = formData.get("reservationId");
+  const id = typeof rawId === "string" ? rawId.trim() : "";
+  if (!id) {
+    return { error: "Identificador de reserva inválido" };
+  }
+
+  const h = await headers();
+  const cookie = h.get("cookie") ?? "";
+  const url = await getBackendProxyUrl(`/reservations/${encodeURIComponent(id)}/cancel`);
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { cookie },
+  });
+
+  const json = (await res.json().catch(() => ({}))) as { message?: string };
+
+  if (res.status === 403) {
+    return {
+      error: "No tienes permiso para cancelar reservas (solo administradores).",
+    };
+  }
+
+  if (res.status === 404) {
+    return { error: "La reserva no existe o ya fue eliminada del sistema." };
+  }
+
+  if (!res.ok) {
+    return {
+      error: typeof json.message === "string" ? json.message : "No se pudo cancelar la reserva",
+    };
+  }
+
+  revalidatePath("/dashboard/reservations");
+  return { ok: true };
+}
