@@ -16,7 +16,9 @@ export function CreateTechnicianForm() {
     <Card className="border-zinc-200 bg-white/80 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
       <CardHeader>
         <CardTitle className="text-lg">Nuevo técnico</CardTitle>
-        <CardDescription>El técnico queda activo por defecto.</CardDescription>
+        <CardDescription>
+          Nombre completo y especialidad principal son obligatorios. El técnico queda activo por defecto.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="grid gap-4 sm:grid-cols-2">
@@ -25,8 +27,13 @@ export function CreateTechnicianForm() {
             <Input id="tname" name="name" placeholder="Nombre completo" required />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="specialty">Especialidad</Label>
-            <Input id="specialty" name="specialty" placeholder="Ej. refrigeración" />
+            <Label htmlFor="specialty">Especialidad principal *</Label>
+            <Input
+              id="specialty"
+              name="specialty"
+              placeholder="Ej. refrigeración, línea blanca…"
+              required
+            />
           </div>
           {state.error ? (
             <p className="text-sm text-red-600 sm:col-span-2 dark:text-red-400" role="alert">

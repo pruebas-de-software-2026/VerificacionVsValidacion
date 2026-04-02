@@ -7,11 +7,15 @@ describe("clientFormSchema", () => {
     expect(r.success).toBe(false);
   });
 
-  it("accepts valid name only", () => {
-    const r = clientFormSchema.safeParse({ name: "Acme SL" });
+  it("accepts valid payload with phone and address", () => {
+    const r = clientFormSchema.safeParse({
+      name: "María Pérez",
+      phone: "+34 600 000 000",
+      address: "Av. Principal 10, Madrid",
+    });
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data.name).toBe("Acme SL");
+      expect(r.data.name).toBe("María Pérez");
     }
   });
 });

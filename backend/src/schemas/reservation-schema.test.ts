@@ -8,6 +8,7 @@ describe("createReservationBodySchema", () => {
       technicianId: "t1",
       startAt: "2026-12-01T10:00:00.000Z",
       endAt: "2026-12-01T11:00:00.000Z",
+      description: "Nevera no enfría",
     });
     expect(parsed.success).toBe(true);
   });
@@ -18,6 +19,7 @@ describe("createReservationBodySchema", () => {
       technicianId: "t1",
       startAt: "2026-12-01T11:00:00.000Z",
       endAt: "2026-12-01T10:00:00.000Z",
+      description: "Test",
     });
     expect(parsed.success).toBe(false);
   });
@@ -28,6 +30,7 @@ describe("createReservationBodySchema", () => {
       technicianId: "t1",
       startAt: "2026-12-01T10:00:00.000",
       endAt: "2026-12-01T11:00:00.000Z",
+      description: "Test",
     });
     expect(parsed.success).toBe(false);
   });

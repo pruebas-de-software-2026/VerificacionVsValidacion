@@ -8,6 +8,7 @@ export const createReservationBodySchema = z
     technicianId: z.string().trim().min(1),
     startAt: isoDateTimeWithOffset,
     endAt: isoDateTimeWithOffset,
+    description: z.string().trim().min(1).max(2000),
   })
   .superRefine((data, ctx) => {
     const start = new Date(data.startAt);

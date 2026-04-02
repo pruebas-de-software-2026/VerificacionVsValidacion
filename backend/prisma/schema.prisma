@@ -18,9 +18,9 @@ enum Role {
 }
 
 enum ReservationStatus {
-  PENDIENTE
-  CONFIRMADO
-  CANCELADO
+  PROGRAMADA
+  COMPLETADA
+  CANCELADA
 }
 
 model User {
@@ -38,7 +38,8 @@ model Client {
   id        String   @id @default(cuid())
   name      String
   email     String?  @unique
-  phone     String?
+  phone     String
+  address   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -48,7 +49,7 @@ model Client {
 model Technician {
   id        String   @id @default(cuid())
   name      String
-  specialty String?
+  specialty String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -56,14 +57,14 @@ model Technician {
   reservations Reservation[]
 }
 
-/// Modelo de datos para reservas. Sprint 1 solo persiste estructura; reglas de negocio en Sprint 2.
 model Reservation {
   id           String            @id @default(cuid())
   clientId     String
   technicianId String
   startAt      DateTime
   endAt        DateTime
-  status       ReservationStatus @default(PENDIENTE)
+  description  String
+  status       ReservationStatus @default(PROGRAMADA)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 

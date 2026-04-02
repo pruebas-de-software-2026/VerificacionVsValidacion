@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/table";
 import type { ReservationListItem } from "@/lib/types/reservation";
 import { CancelReservationButton } from "./cancel-reservation-button";
+import { CompleteReservationButton } from "./complete-reservation-button";
 
 const reservationStatusLabel: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  CONFIRMADO: "Confirmado",
-  CANCELADO: "Cancelado",
+  PROGRAMADA: "Programada",
+  COMPLETADA: "Completada",
+  CANCELADA: "Cancelada",
 };
 
 type Props = {
@@ -49,6 +50,7 @@ export function ReservationsTable({ items, isAdmin }: Props) {
             <TableHead>Horario (local)</TableHead>
             <TableHead>Técnico</TableHead>
             <TableHead>Cliente</TableHead>
+            <TableHead className="max-w-[12rem]">Descripción</TableHead>
             <TableHead>Estado</TableHead>
             {isAdmin ? <TableHead className="text-right">Acciones</TableHead> : null}
           </TableRow>
@@ -62,13 +64,19 @@ export function ReservationsTable({ items, isAdmin }: Props) {
                 <TableCell>{span}</TableCell>
                 <TableCell>{row.technician.name}</TableCell>
                 <TableCell>{row.client.name}</TableCell>
+                <TableCell className="max-w-[12rem] truncate text-sm text-zinc-700 dark:text-zinc-300" title={row.description}>
+                  {row.description}
+                </TableCell>
                 <TableCell>{reservationStatusLabel[row.status] ?? row.status}</TableCell>
                 {isAdmin ? (
                   <TableCell className="text-right">
-                    {row.status === "CANCELADO" ? (
+                    {row.status === "CANCELADA" || row.status === "COMPLETADA" ? (
                       <span className="text-xs text-zinc-500">—</span>
                     ) : (
-                      <CancelReservationButton reservationId={row.id} />
+                      <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end sm:gap-2">
+                        <CompleteReservationButton reservationId={row.id} />
+                        <CancelReservationButton reservationId={row.id} />
+                      </div>
                     )}
                   </TableCell>
                 ) : null}

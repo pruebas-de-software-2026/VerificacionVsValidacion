@@ -2,40 +2,43 @@ import { describe, expect, it } from "vitest";
 import { reservationFormSchema, reservationFormToIsoPayload } from "./reservation";
 
 describe("reservationFormSchema", () => {
-  it("accepts a future slot on a valid date", () => {
+  it("accepts a future 1h slot with description", () => {
     const date = "2030-01-15";
     const parsed = reservationFormSchema.safeParse({
       clientId: "c1",
       technicianId: "t1",
       date,
       startTime: "14:00",
-      endTime: "15:00",
+      description: "Lavadora no centrifuga",
     });
     expect(parsed.success).toBe(true);
   });
 
-  it("rejects when end is before start", () => {
+  it("requires description", () => {
     const parsed = reservationFormSchema.safeParse({
       clientId: "c1",
       technicianId: "t1",
       date: "2030-01-15",
-      startTime: "15:00",
-      endTime: "14:00",
+      startTime: "14:00",
+      description: "",
     });
     expect(parsed.success).toBe(false);
   });
 });
 
 describe("reservationFormToIsoPayload", () => {
-  it("produces ISO strings with Z suffix", () => {
+  it("produces ISO strings with Z suffix and 1h duration", () => {
     const { startAt, endAt } = reservationFormToIsoPayload({
       clientId: "c1",
       technicianId: "t1",
       date: "2030-06-01",
       startTime: "10:00",
-      endTime: "11:00",
+      description: "Test",
     });
     expect(startAt).toMatch(/Z$/);
     expect(endAt).toMatch(/Z$/);
+    const a = new Date(startAt).getTime();
+    const b = new Date(endAt).getTime();
+    expect(b - a).toBe(60 * 60 * 1000);
   });
 });

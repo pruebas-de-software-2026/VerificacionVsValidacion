@@ -29,6 +29,7 @@ export function ClientsTable({ clients }: Props) {
             <TableHead>Nombre</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Teléfono</TableHead>
+            <TableHead>Dirección</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -36,7 +37,10 @@ export function ClientsTable({ clients }: Props) {
             <TableRow key={c.id}>
               <TableCell className="font-medium">{c.name}</TableCell>
               <TableCell>{c.email ?? "—"}</TableCell>
-              <TableCell>{c.phone ?? "—"}</TableCell>
+              <TableCell>{c.phone}</TableCell>
+              <TableCell className="max-w-[14rem] truncate" title={c.address}>
+                {c.address}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

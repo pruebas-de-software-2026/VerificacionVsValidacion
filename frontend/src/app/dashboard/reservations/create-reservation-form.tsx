@@ -26,7 +26,8 @@ export function CreateReservationForm({ clients, technicians }: Props) {
       <CardHeader>
         <CardTitle className="text-lg">Nueva reserva</CardTitle>
         <CardDescription>
-          Selecciona cliente, técnico y franja horaria. Las horas se envían al servidor en UTC (ISO con Z).
+          Horario laboral en hora de Chile (Santiago, L–V, bloques de 1 h). La hora de fin se calcula
+          automáticamente (inicio + 1 h).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -64,8 +65,7 @@ export function CreateReservationForm({ clients, technicians }: Props) {
               </option>
               {activeTechnicians.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.name}
-                  {t.specialty ? ` — ${t.specialty}` : ""}
+                  {t.name} — {t.specialty}
                 </option>
               ))}
             </select>
@@ -74,13 +74,20 @@ export function CreateReservationForm({ clients, technicians }: Props) {
             <Label htmlFor="date">Fecha *</Label>
             <Input id="date" name="date" type="date" min={minDate} required />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="startTime">Inicio *</Label>
-            <Input id="startTime" name="startTime" type="time" required />
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="startTime">Hora de inicio (bloque 1 h) *</Label>
+            <Input id="startTime" name="startTime" type="time" step={3600} required />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="endTime">Fin *</Label>
-            <Input id="endTime" name="endTime" type="time" required />
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="description">Descripción del problema / electrodoméstico *</Label>
+            <textarea
+              id="description"
+              name="description"
+              required
+              rows={3}
+              placeholder="Ej. frigorífico no enfría, lavadora pierde agua…"
+              className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-zinc-800"
+            />
           </div>
           {state.error ? (
             <p className="text-sm text-red-600 sm:col-span-2 dark:text-red-400" role="alert">

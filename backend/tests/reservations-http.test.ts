@@ -18,6 +18,20 @@ if (!jwtSecret || !adminEmail || !adminPassword) {
 const LECTOR_EMAIL = "lector-reservations-http@example.test";
 const LECTOR_PASSWORD = "lector-reservations-http-pass";
 
+/** Tests usan UTC para que las franjas coincidan con días laborables esperados. */
+process.env.BUSINESS_TIMEZONE = "UTC";
+
+const reservationBody = (partial: {
+  clientId: string;
+  technicianId: string;
+  startAt: string;
+  endAt: string;
+  description?: string;
+}) => ({
+  description: "Cita de prueba",
+  ...partial,
+});
+
 describe("Reservations HTTP API", () => {
   const app = createApp();
   let clientId: string;
@@ -42,7 +56,12 @@ describe("Reservations HTTP API", () => {
 
     const clientRes = await agent
       .post("/clients")
-      .send({ name: `Res Client ${Date.now()}`, email: `res-client-${Date.now()}@example.test` })
+      .send({
+        name: `Res Client ${Date.now()}`,
+        email: `res-client-${Date.now()}@example.test`,
+        phone: "+34900111222",
+        address: "Calle Reservas 1, Madrid",
+      })
       .expect(201);
     clientId = clientRes.body?.data?.client?.id as string;
 
@@ -61,12 +80,14 @@ describe("Reservations HTTP API", () => {
   it("rejects unauthenticated POST /reservations", async () => {
     await request(app)
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: "2028-06-01T10:00:00.000Z",
-        endAt: "2028-06-01T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId,
+          startAt: "2028-06-01T10:00:00.000Z",
+          endAt: "2028-06-01T11:00:00.000Z",
+        }),
+      )
       .expect(401);
   });
 
@@ -75,12 +96,14 @@ describe("Reservations HTTP API", () => {
     await agent.post("/auth/login").send({ email: LECTOR_EMAIL, password: LECTOR_PASSWORD }).expect(200);
     await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: "2028-06-01T10:00:00.000Z",
-        endAt: "2028-06-01T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId,
+          startAt: "2028-06-01T10:00:00.000Z",
+          endAt: "2028-06-01T11:00:00.000Z",
+        }),
+      )
       .expect(403);
   });
 
@@ -92,7 +115,7 @@ describe("Reservations HTTP API", () => {
     const endAt = "2028-07-10T15:00:00.000Z";
     const res = await agent
       .post("/reservations")
-      .send({ clientId, technicianId, startAt, endAt })
+      .send(reservationBody({ clientId, technicianId, startAt, endAt }))
       .expect(201);
 
     expect(res.body?.status).toBe("ok");
@@ -104,25 +127,16 @@ describe("Reservations HTTP API", () => {
     const agent = request.agent(app);
     await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
 
-    const day = "2028-08-20";
-    await agent
-      .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: `${day}T10:00:00.000Z`,
-        endAt: `${day}T11:00:00.000Z`,
-      })
-      .expect(201);
+    const day = "2028-08-21";
+    const slot = {
+      startAt: `${day}T10:00:00.000Z`,
+      endAt: `${day}T11:00:00.000Z`,
+    };
+    await agent.post("/reservations").send(reservationBody({ clientId, technicianId, ...slot })).expect(201);
 
     const overlap = await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: `${day}T10:30:00.000Z`,
-        endAt: `${day}T11:30:00.000Z`,
-      })
+      .send(reservationBody({ clientId, technicianId, ...slot }))
       .expect(409);
 
     expect(overlap.body?.status).toBe("error");
@@ -135,12 +149,14 @@ describe("Reservations HTTP API", () => {
 
     const res = await agent
       .post("/reservations")
-      .send({
-        clientId: "cl_nonexistent_xxxxxxxx",
-        technicianId,
-        startAt: "2028-11-01T10:00:00.000Z",
-        endAt: "2028-11-01T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId: "cl_nonexistent_xxxxxxxx",
+          technicianId,
+          startAt: "2028-11-01T10:00:00.000Z",
+          endAt: "2028-11-01T11:00:00.000Z",
+        }),
+      )
       .expect(400);
 
     expect(res.body?.message).toMatch(/client/i);
@@ -152,12 +168,14 @@ describe("Reservations HTTP API", () => {
 
     const res = await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId: "cm_nonexistent_tech_xxxxxx",
-        startAt: "2028-11-02T10:00:00.000Z",
-        endAt: "2028-11-02T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId: "cm_nonexistent_tech_xxxxxx",
+          startAt: "2028-11-02T10:00:00.000Z",
+          endAt: "2028-11-02T11:00:00.000Z",
+        }),
+      )
       .expect(400);
 
     expect(res.body?.message).toMatch(/technician/i);
@@ -176,12 +194,14 @@ describe("Reservations HTTP API", () => {
 
     const res = await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId: inactiveTechId,
-        startAt: "2028-11-03T10:00:00.000Z",
-        endAt: "2028-11-03T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId: inactiveTechId,
+          startAt: "2028-11-03T10:00:00.000Z",
+          endAt: "2028-11-03T11:00:00.000Z",
+        }),
+      )
       .expect(400);
 
     expect(res.body?.message).toMatch(/active/i);
@@ -193,12 +213,14 @@ describe("Reservations HTTP API", () => {
 
     const res = await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: "2020-01-01T10:00:00.000Z",
-        endAt: "2020-01-01T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId,
+          startAt: "2020-01-01T10:00:00.000Z",
+          endAt: "2020-01-01T11:00:00.000Z",
+        }),
+      )
       .expect(400);
 
     expect(res.body?.status).toBe("error");
@@ -212,12 +234,12 @@ describe("Reservations HTTP API", () => {
     const token = signAccessToken(admin);
 
     const day = "2028-09-01";
-    const body = {
+    const body = reservationBody({
       clientId,
       technicianId,
       startAt: `${day}T16:00:00.000Z`,
       endAt: `${day}T17:00:00.000Z`,
-    };
+    });
 
     const [first, second] = await Promise.all([
       request(app).post("/reservations").set("Authorization", `Bearer ${token}`).send(body),
@@ -262,30 +284,36 @@ describe("Reservations HTTP API", () => {
     const from = "2030-01-01T00:00:00.000Z";
     await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: "2030-06-15T10:00:00.000Z",
-        endAt: "2030-06-15T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId,
+          startAt: "2030-06-17T10:00:00.000Z",
+          endAt: "2030-06-17T11:00:00.000Z",
+        }),
+      )
       .expect(201);
     await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId: techBId,
-        startAt: "2030-03-10T10:00:00.000Z",
-        endAt: "2030-03-10T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId: techBId,
+          startAt: "2030-03-12T10:00:00.000Z",
+          endAt: "2030-03-12T11:00:00.000Z",
+        }),
+      )
       .expect(201);
     await agent
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: "2030-03-20T10:00:00.000Z",
-        endAt: "2030-03-20T11:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId,
+          startAt: "2030-03-20T10:00:00.000Z",
+          endAt: "2030-03-20T11:00:00.000Z",
+        }),
+      )
       .expect(201);
 
     const list = await agent
@@ -312,12 +340,15 @@ describe("Reservations HTTP API", () => {
 
     const startAt = "2031-05-01T14:00:00.000Z";
     const endAt = "2031-05-01T15:00:00.000Z";
-    const created = await agent.post("/reservations").send({ clientId, technicianId, startAt, endAt }).expect(201);
+    const created = await agent
+      .post("/reservations")
+      .send(reservationBody({ clientId, technicianId, startAt, endAt }))
+      .expect(201);
     const id = created.body?.data?.reservation?.id as string;
 
     await agent.patch(`/reservations/${id}/cancel`).expect(200);
 
-    await agent.post("/reservations").send({ clientId, technicianId, startAt, endAt }).expect(201);
+    await agent.post("/reservations").send(reservationBody({ clientId, technicianId, startAt, endAt })).expect(201);
   });
 
   it("cancel past reservation is allowed for audit (F7)", async () => {
@@ -330,12 +361,13 @@ describe("Reservations HTTP API", () => {
         technicianId,
         startAt: new Date("2019-06-01T10:00:00.000Z"),
         endAt: new Date("2019-06-01T11:00:00.000Z"),
-        status: ReservationStatus.CONFIRMADO,
+        description: "Histórico de prueba",
+        status: ReservationStatus.PROGRAMADA,
       },
     });
 
     const res = await agent.patch(`/reservations/${past.id}/cancel`).expect(200);
-    expect(res.body?.data?.reservation?.status).toBe("CANCELADO");
+    expect(res.body?.data?.reservation?.status).toBe("CANCELADA");
 
     await prisma.reservation.delete({ where: { id: past.id } });
   });
@@ -344,13 +376,16 @@ describe("Reservations HTTP API", () => {
     const agent = request.agent(app);
     await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
 
-    const startAt = "2032-01-10T12:00:00.000Z";
-    const endAt = "2032-01-10T13:00:00.000Z";
-    const created = await agent.post("/reservations").send({ clientId, technicianId, startAt, endAt }).expect(201);
+    const startAt = "2032-01-12T12:00:00.000Z";
+    const endAt = "2032-01-12T13:00:00.000Z";
+    const created = await agent
+      .post("/reservations")
+      .send(reservationBody({ clientId, technicianId, startAt, endAt }))
+      .expect(201);
     const id = created.body?.data?.reservation?.id as string;
     await agent.patch(`/reservations/${id}/cancel`).expect(200);
     const second = await agent.patch(`/reservations/${id}/cancel`).expect(200);
-    expect(second.body?.data?.reservation?.status).toBe("CANCELADO");
+    expect(second.body?.data?.reservation?.status).toBe("CANCELADA");
   });
 
   it("lector cannot PATCH /reservations/:id/cancel (F8)", async () => {
@@ -358,12 +393,14 @@ describe("Reservations HTTP API", () => {
     await admin.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
     const created = await admin
       .post("/reservations")
-      .send({
-        clientId,
-        technicianId,
-        startAt: "2033-04-01T09:00:00.000Z",
-        endAt: "2033-04-01T10:00:00.000Z",
-      })
+      .send(
+        reservationBody({
+          clientId,
+          technicianId,
+          startAt: "2033-04-01T09:00:00.000Z",
+          endAt: "2033-04-01T10:00:00.000Z",
+        }),
+      )
       .expect(201);
     const id = created.body?.data?.reservation?.id as string;
 
@@ -376,5 +413,23 @@ describe("Reservations HTTP API", () => {
     const agent = request.agent(app);
     await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
     await agent.patch("/reservations/cl_nonexistent123456789012/cancel").expect(404);
+  });
+
+  it("admin can mark reservation as completed", async () => {
+    const agent = request.agent(app);
+    await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
+
+    const startAt = "2034-05-02T11:00:00.000Z";
+    const endAt = "2034-05-02T12:00:00.000Z";
+    const created = await agent
+      .post("/reservations")
+      .send(reservationBody({ clientId, technicianId, startAt, endAt }))
+      .expect(201);
+    const id = created.body?.data?.reservation?.id as string;
+
+    const done = await agent.patch(`/reservations/${id}/complete`).expect(200);
+    expect(done.body?.data?.reservation?.status).toBe("COMPLETADA");
+
+    await prisma.reservation.deleteMany({ where: { id } });
   });
 });

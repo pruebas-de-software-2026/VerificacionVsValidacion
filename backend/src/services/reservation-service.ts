@@ -1,4 +1,5 @@
 import { ReservationStatus } from "../../generated/prisma/client";
+import { assertValidReservationSlot } from "../config/business-hours";
 import { HttpError } from "../errors/http-error";
 import type { PaginationQuery } from "../lib/pagination";
 import type { CreateReservationBody, ListReservationsParsedQuery } from "../schemas/reservation-schema";
@@ -14,7 +15,7 @@ export async function listReservations(input: ListReservationsInput) {
   const where = {
     startAt: { gte: fromDate },
     ...(input.technicianId ? { technicianId: input.technicianId } : {}),
-    ...(!input.includeCancelled ? { status: { not: ReservationStatus.CANCELADO } } : {}),
+    ...(!input.includeCancelled ? { status: { not: ReservationStatus.CANCELADA } } : {}),
   };
 
   const [items, total] = await Promise.all([
@@ -47,13 +48,44 @@ export async function cancelReservation(id: string) {
     throw new HttpError(404, "Reservation not found");
   }
 
-  if (existing.status === ReservationStatus.CANCELADO) {
+  if (existing.status === ReservationStatus.CANCELADA) {
     return existing;
   }
 
   return prisma.reservation.update({
     where: { id },
-    data: { status: ReservationStatus.CANCELADO },
+    data: { status: ReservationStatus.CANCELADA },
+    include: {
+      client: { select: { id: true, name: true } },
+      technician: { select: { id: true, name: true } },
+    },
+  });
+}
+
+export async function completeReservation(id: string) {
+  const existing = await prisma.reservation.findUnique({
+    where: { id },
+    include: {
+      client: { select: { id: true, name: true } },
+      technician: { select: { id: true, name: true } },
+    },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Reservation not found");
+  }
+
+  if (existing.status === ReservationStatus.CANCELADA) {
+    throw new HttpError(400, "Cannot complete a cancelled reservation");
+  }
+
+  if (existing.status === ReservationStatus.COMPLETADA) {
+    return existing;
+  }
+
+  return prisma.reservation.update({
+    where: { id },
+    data: { status: ReservationStatus.COMPLETADA },
     include: {
       client: { select: { id: true, name: true } },
       technician: { select: { id: true, name: true } },
@@ -78,6 +110,8 @@ export async function createReservation(input: CreateReservationBody) {
     throw new HttpError(400, "Reservation start must be in the future");
   }
 
+  assertValidReservationSlot(startAt, endAt);
+
   return prisma.$transaction(
     async (tx) => {
       const lockKey = technicianAdvisoryLockKey(input.technicianId);
@@ -87,6 +121,9 @@ export async function createReservation(input: CreateReservationBody) {
       if (!client) {
         throw new HttpError(400, "Client not found");
       }
+      if (!client.phone.trim() || !client.address.trim()) {
+        throw new HttpError(400, "Client must have a primary phone and service address");
+      }
 
       const technician = await tx.technician.findUnique({ where: { id: input.technicianId } });
       if (!technician) {
@@ -95,11 +132,14 @@ export async function createReservation(input: CreateReservationBody) {
       if (!technician.isActive) {
         throw new HttpError(400, "Technician is not active");
       }
+      if (!technician.specialty.trim()) {
+        throw new HttpError(400, "Technician must have a main specialty");
+      }
 
       const overlapping = await tx.reservation.findFirst({
         where: {
           technicianId: input.technicianId,
-          status: { not: ReservationStatus.CANCELADO },
+          status: ReservationStatus.PROGRAMADA,
           startAt: { lt: endAt },
           endAt: { gt: startAt },
         },
@@ -108,7 +148,7 @@ export async function createReservation(input: CreateReservationBody) {
       if (overlapping) {
         throw new HttpError(
           409,
-          "Technician already has a reservation in this time range",
+          "Technician already has an active reservation in this time range",
           "RESERVATION_OVERLAP",
         );
       }
@@ -119,7 +159,8 @@ export async function createReservation(input: CreateReservationBody) {
           technicianId: input.technicianId,
           startAt,
           endAt,
-          status: ReservationStatus.PENDIENTE,
+          description: input.description.trim(),
+          status: ReservationStatus.PROGRAMADA,
         },
       });
     },

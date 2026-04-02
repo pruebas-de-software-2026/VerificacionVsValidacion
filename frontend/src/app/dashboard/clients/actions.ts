@@ -12,12 +12,14 @@ export async function createClientAction(_prev: ActionState, formData: FormData)
     name: formData.get("name"),
     email: formData.get("email"),
     phone: formData.get("phone"),
+    address: formData.get("address"),
   };
 
   const parsed = clientFormSchema.safeParse({
     name: raw.name,
     email: raw.email === "" || raw.email === null ? undefined : raw.email,
-    phone: raw.phone === "" || raw.phone === null ? undefined : raw.phone,
+    phone: raw.phone,
+    address: raw.address,
   });
 
   if (!parsed.success) {
@@ -40,7 +42,8 @@ export async function createClientAction(_prev: ActionState, formData: FormData)
     body: JSON.stringify({
       name: parsed.data.name,
       email: parsed.data.email,
-      phone: parsed.data.phone ?? null,
+      phone: parsed.data.phone,
+      address: parsed.data.address,
     }),
   });
 

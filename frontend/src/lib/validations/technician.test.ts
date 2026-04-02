@@ -10,4 +10,8 @@ describe("technicianFormSchema", () => {
     const r = technicianFormSchema.safeParse({ name: "Ana", specialty: "Frío" });
     expect(r.success).toBe(true);
   });
+
+  it("rejects empty specialty", () => {
+    expect(technicianFormSchema.safeParse({ name: "Ana", specialty: "" }).success).toBe(false);
+  });
 });

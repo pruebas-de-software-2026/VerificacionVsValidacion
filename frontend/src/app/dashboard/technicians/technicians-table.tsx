@@ -42,7 +42,7 @@ export function TechniciansTable({ technicians }: Props) {
           {technicians.map((t) => (
             <TableRow key={t.id}>
               <TableCell className="font-medium">{t.name}</TableCell>
-              <TableCell>{t.specialty ?? "—"}</TableCell>
+              <TableCell>{t.specialty}</TableCell>
               <TableCell className="text-right">
                 <Switch
                   checked={t.isActive}

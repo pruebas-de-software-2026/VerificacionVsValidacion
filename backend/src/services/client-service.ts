@@ -28,6 +28,7 @@ export async function createClient(body: CreateClientBody) {
       name: body.name,
       email: body.email ?? null,
       phone: body.phone,
+      address: body.address,
     },
   });
 }
@@ -39,6 +40,7 @@ export async function updateClient(id: string, body: UpdateClientBody) {
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.email !== undefined ? { email: body.email ?? null } : {}),
       ...(body.phone !== undefined ? { phone: body.phone } : {}),
+      ...(body.address !== undefined ? { address: body.address } : {}),
     },
   });
 }

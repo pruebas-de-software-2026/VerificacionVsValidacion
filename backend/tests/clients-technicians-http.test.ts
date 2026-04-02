@@ -54,7 +54,12 @@ describe("Clients and technicians HTTP API", () => {
     const name = `Cliente Test ${Date.now()}`;
     const createRes = await agent
       .post("/clients")
-      .send({ name, email: `client-${Date.now()}@example.test` })
+      .send({
+        name,
+        email: `client-${Date.now()}@example.test`,
+        phone: "+34900111222",
+        address: "Calle Cliente HTTP 1",
+      })
       .expect(201);
 
     expect(createRes.body?.status).toBe("ok");
@@ -78,7 +83,10 @@ describe("Clients and technicians HTTP API", () => {
   it("lector cannot POST /clients", async () => {
     const agent = request.agent(app);
     await agent.post("/auth/login").send({ email: LECTOR_EMAIL, password: LECTOR_PASSWORD }).expect(200);
-    await agent.post("/clients").send({ name: "No permitido" }).expect(403);
+    await agent
+      .post("/clients")
+      .send({ name: "No permitido", phone: "+34900111222", address: "Calle 1" })
+      .expect(403);
   });
 
   it("lector can GET /clients", async () => {
@@ -119,7 +127,7 @@ describe("Clients and technicians HTTP API", () => {
 
     const createRes = await agent
       .post("/technicians")
-      .send({ name: `Toggle ${Date.now()}`, isActive: true })
+      .send({ name: `Toggle ${Date.now()}`, specialty: "QA", isActive: true })
       .expect(201);
     const id = createRes.body?.data?.technician?.id as string;
 
@@ -134,7 +142,12 @@ describe("Clients and technicians HTTP API", () => {
 
     const createRes = await agent
       .post("/clients")
-      .send({ name: `Put Client ${Date.now()}`, email: `put-${Date.now()}@example.test` })
+      .send({
+        name: `Put Client ${Date.now()}`,
+        email: `put-${Date.now()}@example.test`,
+        phone: "+34900111222",
+        address: "Calle Put 1",
+      })
       .expect(201);
     const id = createRes.body?.data?.client?.id as string;
 
@@ -155,8 +168,14 @@ describe("Clients and technicians HTTP API", () => {
     await agent.post("/auth/login").send({ email: adminEmail, password: adminPassword }).expect(200);
 
     const email = `dup-${Date.now()}@example.test`;
-    await agent.post("/clients").send({ name: "Primero", email }).expect(201);
-    const res = await agent.post("/clients").send({ name: "Segundo", email }).expect(409);
+    await agent
+      .post("/clients")
+      .send({ name: "Primero", email, phone: "+34900111222", address: "Dir A" })
+      .expect(201);
+    const res = await agent
+      .post("/clients")
+      .send({ name: "Segundo", email, phone: "+34900111333", address: "Dir B" })
+      .expect(409);
     expect(res.body?.status).toBe("error");
   });
 });

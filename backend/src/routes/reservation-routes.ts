@@ -26,4 +26,11 @@ reservationRouter.patch(
   reservationController.cancelReservation,
 );
 
+reservationRouter.patch(
+  "/:id/complete",
+  authenticate,
+  authorizeRoles(Role.ADMIN),
+  reservationController.completeReservation,
+);
+
 export { reservationRouter };

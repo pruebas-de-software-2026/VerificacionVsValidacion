@@ -2,7 +2,8 @@ export type ClientRow = {
   id: string;
   name: string;
   email: string | null;
-  phone: string | null;
+  phone: string;
+  address: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -10,7 +11,7 @@ export type ClientRow = {
 export type TechnicianRow = {
   id: string;
   name: string;
-  specialty: string | null;
+  specialty: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

@@ -6,6 +6,7 @@ export type ReservationListItem = {
   technicianId: string;
   startAt: string;
   endAt: string;
+  description: string;
   status: string;
   createdAt: string;
   updatedAt: string;

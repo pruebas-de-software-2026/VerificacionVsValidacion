@@ -46,3 +46,16 @@ export async function cancelReservation(req: Request, res: Response, next: NextF
     next(error);
   }
 }
+
+export async function completeReservation(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = pathParamId(req.params.id);
+    if (!id) {
+      throw new HttpError(400, "id is required");
+    }
+    const reservation = await reservationService.completeReservation(id);
+    res.status(200).json({ status: "ok", data: { reservation } });
+  } catch (error: unknown) {
+    next(error);
+  }
+}

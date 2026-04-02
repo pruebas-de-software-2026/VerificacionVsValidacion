@@ -22,7 +22,7 @@ export async function createTechnicianAction(
 
   const parsed = technicianFormSchema.safeParse({
     name: raw.name,
-    specialty: raw.specialty === "" || raw.specialty === null ? undefined : raw.specialty,
+    specialty: raw.specialty,
   });
 
   if (!parsed.success) {
@@ -44,7 +44,7 @@ export async function createTechnicianAction(
     headers: { "Content-Type": "application/json", cookie },
     body: JSON.stringify({
       name: parsed.data.name,
-      specialty: parsed.data.specialty ?? null,
+      specialty: parsed.data.specialty,
     }),
   });
 
